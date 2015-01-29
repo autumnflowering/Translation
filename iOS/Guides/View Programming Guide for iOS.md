@@ -168,52 +168,131 @@ bounds 属性主要用于绘图。其默认大小与 frame rectangle 相符。
 
 ### Coordinate System Transformations ###
 
-坐标系统变换提供了一种快速、简便地修改 view （及其内容）的方式。仿射变换 (affine transform) 是一个数学矩阵，它指定怎样把一个坐标系统中的点映射到另一个坐标系统。可把一个仿射变换施加到整个 view 上以改变其尺寸、位置及相对于 superview 的方向。也可在绘图代码中使用仿射变换以对部分内容执行同类操作。
+坐标系统变换提供了一种快速、简便地修改 view （及其内容）的方式。仿射变换 (affine transform) 是一个数学矩阵，它指定怎样把一个坐标系统中的点映射到另一个坐标系统。可把仿射变换施加到整个 view 上以改变其尺寸、位置及相对于 superview 的方向，也可在绘图代码中使用仿射变换以对部分内容执行同类操作。因此怎样施加仿射变换取决于环境上下文 (context)：
 
-Coordinate system transformations offer a way to alter your view (or its contents) quickly and easily. An affine
-transform is a mathematical matrix that specifies how points in one coordinate system map to points in a
-different coordinate system. You can apply affine transforms to your entire view to change the size, location,
-or orientation of the view relative to its superview. You can also use affine transforms in your drawing code to
-perform the same types of manipulations to individual pieces of rendered content. How you apply the affine
-transform therefore depends on context:
-● To modify your entire view, modify the affine transform in the transform property of your view.
-● To modify specific pieces of content in your view’s drawRect: method, modify the affine transform
-associated with the active graphics context.
-You typically modify the transform property of a view when you want to implement animations. For example,
-you could use this property to create an animation of your view rotating around its center point. You would
-not use this property to make permanent changes to your view, such as modifying its position or size a view
-within its superview’s coordinate space. For that type of change, you should modify the frame rectangle of
-your view instead.
-Note: When modifying the transform property of your view, all transformations are performed
-relative to the center point of the view.
-In your view’s drawRect: method, you use affine transforms to position and orient the items you plan to
-draw. Rather than fix the position of an object at some location in your view, it is simpler to create each object
-relative to a fixed point, typically (0, 0), and use a transform to position the object immediately prior to drawing.
-That way, if the position of the object changes in your view, all you have to do is modify the transform, which
-is much faster and less expensive than recreating the object at its new location. You can retrieve the affine
-transform associated with a graphics context using the CGContextGetCTM function and you can use the
-related Core Graphics functions to set or modify this transform during drawing.
-The current transformation matrix (CTM) is the affine transform in use at any given time. When manipulating
-the geometry of your entire view, the CTM is the affine transform stored in your view’s transform property.
-Inside your drawRect: method, the CTM is the affine transform associated with the active graphics context.
+- 要修改整个 view, 请修改 UIView.transform 属性；
+- 要在 drawRect: 方法中修改特定部分的内容，请修改当前 graphics context 的仿射变换。
+
+通常在需要实现动画时修改 transform 属性，如可通过该属性创建一个沿着 view 中心点旋转的动画。但不使用它对 view 作永久性的修改，如在 superview 的坐标空间内修改其位置或尺寸，这种修改应使用 frame rectangle.
+
+注意：修改 UIView.transform 属性时，所有的变换都是相对于 view 的中心点的。
+
+在 drawRect: 方法中，使用仿射变换来定位和定向 (position and orient) 要绘制的东西。相对于某个固定点（通常是原点）来创建对象，然后在绘图前使用 transform 来放置其位置，这要比把对象固定在 view 中的某个位置要简单。若对象在 view 中的位置发生了变化，只需修改 transform 即可，这比在新位置重建对象快速、节约得多。调用 CGContextGetCTM 函数获得 graphics context 的仿射变换，绘图过程中还可调用相关的 Core Graphics 函数以设置或修改该 transform.
+
+CTM 是在某个给定时刻所用的仿射变换：
+
+操纵整个 view 的几何特性时，CTM 就是存储在 transform 属性中的那个仿射变换。
+而在 drawRect: 方法中，CTM 是与当前 graphics context 关联的那个仿射变换。
+
+Subview 的坐标系统是基于其祖先的坐标系统构建的 (build on), 因此修改 view's transform 属性时，同时会影响它自己和它所有的 subview. 但这些变化只影响 views 在屏幕上的最终渲染结果，因为 view 是相对于自己的边界绘制其内容、以及布局其 subview 的，在绘图和布局过程中它可以忽略 superview's transform.
 The coordinate system of each subview builds upon the coordinate systems of its ancestors. So when you
 modify a view’s transform property, that change affects the view and all of its subviews. However, these
 changes affect only the final rendering of the views on the screen. Because each view draws its content and
 lays out its subviews relative to its own bounds, it can ignore its superview’s transform during drawing and
 layout.
 
+下图演示了渲染时两个旋转因子是如何在视觉上合并起来的。在 view's drawRect: 方法中，对形状施加一个 45 度的旋转因子，使之看起来旋转了 45 度。再对 view 施加另一个 45 度旋转因子，使形状看起来像是旋转了 90 度。相对于 view 而言，形状仍只旋转了 45 度，但 view 的旋转使之看起来像是旋转了 90 度。
+
+![Rotating a view and its content](images/rotating_a_view_and_its_content.jpg)
+
+重要：若 UIView.transform 属性不是恒等变换，则 UIView.frame 属性的值就是未定义的，且必须被忽略。对 view 施加 transform 时，必须使用其 bounds 和 center 属性来获得其位置和尺寸。但任何 subview 的 frame rectangle 仍然有效，因为它们是相对于 view's bounds 的。
+
+关于如何在运行时修改 view's transform 属性，请参阅 [Translating, Scaling, and
+Rotating Views](#Translating, Scaling, and
+Rotating Views). 关于如何在绘图过程中使用 transforms 来定位内容，请参阅 Drawing and Printing Guide for iOS.
+
 ### Points Versus Pixels ###
+
+在 iOS 中，所有的坐标和距离都是用浮点值表示的，单位为点。点的可测大小因设备而异。The main thing to understand about points is that they provide a fixed frame of reference for drawing.
+
+以下是以点为单位时一些 iOS 设备的维度：
+
+- 3.5 英寸 iPhone 和 iPod Touch: 320 x 480
+- 4 英寸带视网膜显示屏的 iPhone 和 iPod Touch: 320 x 568
+- iPad: 768 x 1024
+
+用于各种设备的基于点的测量系统定义了所谓的用户坐标空间，这是几乎你的所有代码中所用的标准坐标空间，如操纵 view 的几何特性或调用 Core Graphics 函数绘图时，使用的都是点和用户坐标空间。尽管有时候用户坐标空间的点直接映射为设备屏幕上的像素，但你永远不要假定一直都会是这样。请谨记：**一个点未必会映射成屏幕上的一个像素。**在设备层面，view 中所指定的所有坐标都必须在某一时刻被转换为像素，不过用户坐标空间点到设备坐标空间像素的映射通常是由系统处理的。UIKit 和 Core Graphics 都使用了一个主要基于向量的绘图模型，其中所有的坐标值都是用点指定的。这样，使用（如） Core Graphics 绘图时，可以为图像指定相同的值而无须关心设备的屏幕分辨率。
+
+当需要处理图像或其他诸如 OpenGL ES 等基于像素的技术时，iOS 提供了关于处理这些像素的帮助。对于作为资源存储在 app bundle 中的静态图像文件，iOS defines conventions for specifying your images at different pixel densities and for loading the image that best matches the current screen resolution. View 也提供了有关 current scale factor 的信息，这样你就可以手工调整任何基于像素的绘图代码，以适应高分辨率屏幕。关于在不同屏幕分辨率上处理基于像素的内容，请参阅 Drawing and Printing Guide for iOS - Supporting High-Resolution Screens in Views.
 
 ## The Runtime Interaction Model for Views ##
 
+用户与界面交互时，或你的代码以编程方式更改了什么东西时，UIKit 中就发生一系列复杂的事件，以处理这些交互。在这些事件中的某个特定点，UIKit call out 你的 view 类，使之得以以程序的身份作出响应。理解这些 callout 点对于理解 view 怎样融入程序是至关重要的。下图显示了一些基本的事件，始于用户触摸屏幕，终于图形系统更新屏幕内容。对于以编程方式发起的动作，同样的事件也会发生。
+
+![UIKit interactions with your view objects](images/UIKit_interactions.jpg)
+
+以下是对上图中事件的分解：
+
+1. 用户触摸屏幕。
+1. 硬件把触摸事件报告给 UIKit framework.
+1. UIKit framework 把触摸打包成一个 UIEvent 对象，并分派给适当的 view. 关于 UIKit 如何把事件分发给 view, 请参阅 Event Handling Guide for iOS.
+1. View 中的事件处理代码响应该事件，如代码可以：
+	- 更改 view 或其 subview 的属性 (frame, bounds, alpha, etc.);
+	- 调用 setNeedsLayout 方法以表明该 view 或其 subview 需要更新布局；
+	- 调用 setNeedsDisplay 或 setNeedsDisplayInRect: 方法以表明该 view 或其 subview 需要被重绘；
+	- 通知 controller 某些数据发生了改变。
+	- 当然，具体该如何响应取决于你。
+1. 若 view 的几何特性发生了改变，UIKit 根据以下规则更新其 subview:
+    - 若为 view 配置了 autoresizing 规则，UIKit 根据这些规则调整每个 view. 关于 autoresizing rules, 请参阅 Handling Layout Changes Automatically Using Autoresizing Rules.
+    - 若 view 实现了 layoutSubviews 方法，则 UIKit 调用之。你可以在自定义的 view 中 override 此方法以调整 subview 的位置和尺寸。For example, a view that provides a large scrollable area would need to use several subviews as “tiles” rather than create one large view, which is not likely to fit in memory anyway. In its implementation of this method, the view would hide any subviews that are now offscreen or reposition them and use them to draw newly exposed content. As part of this process, the view’s layout code can also invalidate any views that need to be redrawn.
+1. 若任何一个 view 的任何一部分被标记为需要重绘，UIKit 就要求该 view 重绘自己。对于显式地定义了 drawRect: 方法的自定义 view, UIKit 会调用该方法。对该方法的实现应尽可能快地重绘指定的区域，不要做其他工作。此时不要做额外的布局更新，也不要修改程序的数据模型。该方法的目的仅仅是更新 view 的可见内容。Standard system views typically do not implement a drawRect: method but instead manage their drawing at this time.
+1. 更新的 view 与其他可见内容合成 (composite), 然后送往图形硬件。
+1. 图形硬件把渲染后的内容传递给屏幕。
+
+注意：以上更新模型主要适于使用标准 system view 和绘图技术的程序。使用 OpenGL ES 绘图的程序通常配置单个全屏的 view, 并在与之相关联的 OpenGL ES graphics context 中直接绘图。这种情况下，view 可能仍然处理触摸事件，但由于它是全屏的，故无须布局 subview.
+
+In the preceding set of steps, the primary integration points for your own custom views are:
+
+- The event-handling methods:
+	- touchesBegan:withEvent:
+	- touchesMoved:withEvent:
+	- touchesEnded:withEvent:
+	- touchesCancelled:withEvent:
+- The layoutSubviews method
+- The drawRect: method
+
+这些是最常见的 overridden 方法，但可能不必全部 override 它们。若使用 gesture recognizer 处理事件，则无须 override 任何这些事件处理方法。类似地，若 view 不包含 subview 或其尺寸不会改变，则无须 override layoutSubviews 方法。最后，仅当 view 的内容会在运行时改变，且使用诸如 UIKit 或 Core Graphics 等 native 技术绘图时，才需要 override drawRect: 方法。
+
+注意以上是主要的 integration points, 但不是全部。Several methods of the UIView class are designed to be override points for subclasses. You should look at the method descriptions in UIView Class Reference to see which methods might be appropriate for you to override in your custom implementations.
+
 ## Tips for Using Views Effectively ##
+
+你需要负责自定义的 view 的性能。UIKit 尽其最大努力优化了与 view 相关的行为，并帮助你在自定义 view 中达到良好的性能。然而你仍可在以下方面帮助 UIKit.
+
+重要：优化绘图代码前，应先收集当前的性能数据。衡量当前的性能可让你确认是否真的有问题存在，若有，可作为基准，以与优化后的性能作对比。
+
+### Views Do Not Always Have a Corresponding View Controller ###
+
+View 和 view controller 很少有一一对应关系。View controller 的责任是管理 view hierarchy, 后者通常包含多个 view 以实现独立的功能 (self-contained feature). iPhone 程序的 view hierarchy 通常会充满整个屏幕，而 iPad 程序的 view hierarchy 可能只占据屏幕的一部分。
+
+设计程序界面时，要考虑 view controller 的角色。View controller 提供了许多重要行为，如协调 view 在屏幕上的展示和移除，释放内存以响应低内存警告，旋转 view 以响应界面方向的变化。Circumventing these behaviors could cause your application to behave incorrectly or in unexpected ways.
+
+### Minimize Custom Drawing ###
+
+尽管有时候自定义绘图是必要的，但它也是你应该尽量避免的。仅当已有的 system view 类未提供你想要的外观或能力时，才真的需要自定义绘图。要展示的内容可通过已有的 view 组合起来时，最好的方法就是把它们组合到一个自定义的 view hierarchy 中。
+
+### Take Advantage of Content Modes ####
+
+内容模式把重绘 view 的时间降到了最低。View 默认使用 UIViewContentModeScaleToFill 内容模式，即缩放 view 已有的内容以适应 view's frame rectangle. 可根据需要更改内容模式，但应尽量避免 UIViewContentModeRedraw 模式。不管使用何种内容模式，总可通过调用 setNeedsDisplay or setNeedsDisplayInRect: 以强制内容重绘。
+
+### Declare Views as Opaque Whenever Possible ###
+
+UIKit 使用 UIView.opaque 属性决定某个 view 是否可优化合成 (compositing) 操作。把该属性的值设为 YES 相当于告诉 UIKit, 在该 view 后面不需要渲染任何内容，减少渲染可提高绘图代码的性能。当然，置 UIView.opaque = YES 的话，必须用完全不透明的内容完整地填充其 bounds rectangle.
+
+### Adjust Your View's Drawing Behavior When Scrolling ###
+
+滚动会在短时间内引起 view 的许多更新，若 view 的绘图代码未适当地调整，滚动起来就可能卡顿。Rather than trying to ensure that your view's content is pristine at all times, consider changing your view's behavior when a scrolling operation begins. 如可临时降低内容的渲染质量，
+
+### Do Not Customize Controls by Embedding Subviews ###
+
+
 
 # Windows #
 
 # Views #
 
 
-# Animations #
+# Animations #   
 本章讲的动画技术都是 Core Animation 内置的，你要做的就是触发动画，对每一帧的渲染就是 Core Animation 的事了。
 
 ## What Can Be Animated? ##
