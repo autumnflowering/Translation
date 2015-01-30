@@ -7,7 +7,7 @@ Apple Official Documentation
 
 在 iOS 中使用窗口和 view 在屏幕上展示程序的内容。窗口本身没有任何可见的内容，但为 view 提供了基本的容器；View 定义了窗口的一部分，可用以填充具体的内容。
 
-每个程序至少有一个窗口和一个 view, 以展示其内容。UIKit 和一些其他系统框架提供了预定义好的 view, 简至按钮、文本标签，繁至表格、picker, scroll 等。若预定义的 view 不能满足你的需要，你还可以自定义 view 并自己处理绘图和事件。
+每个程序至少有一个窗口和一个 view, 以展示其内容。UIKit 和一些其他系统框架提供了预定义好的 view, 简至按钮、文本标签，繁至表格、picker, scroll 等。若预定义的 view 不能满足需要，还可自定义 view 并自己处理绘图和事件。
 
 ## 内容一瞥 ##
 
@@ -277,20 +277,332 @@ View 和 view controller 很少有一一对应关系。View controller 的责任
 
 ### Declare Views as Opaque Whenever Possible ###
 
-UIKit 使用 UIView.opaque 属性决定某个 view 是否可优化合成 (compositing) 操作。把该属性的值设为 YES 相当于告诉 UIKit, 在该 view 后面不需要渲染任何内容，减少渲染可提高绘图代码的性能。当然，置 UIView.opaque = YES 的话，必须用完全不透明的内容完整地填充其 bounds rectangle.
+UIKit 使用 UIView.opaque 属性决定某个 view 是否可优化合成 (compositing) 操作。把该属性的值设为 YES 相当于告诉 UIKit, 在该 view 后面不需要渲染任何内容，减少渲染可提高绘图代码的性能。当然，置 `UIView.opaque = YES` 的话，必须用完全不透明的内容完整地填充其 bounds rectangle.
 
 ### Adjust Your View's Drawing Behavior When Scrolling ###
 
-滚动会在短时间内引起 view 的许多更新，若 view 的绘图代码未适当地调整，滚动起来就可能卡顿。Rather than trying to ensure that your view's content is pristine at all times, consider changing your view's behavior when a scrolling operation begins. 如可临时降低内容的渲染质量，
+滚动会在短时间内引起 view 的许多更新，若 view 的绘图代码未适当地调整，滚动起来就可能卡顿。Rather than trying to ensure that your view's content is pristine at all times, consider changing your view's behavior when a scrolling operation begins. 如滚动期间临时降低内容的渲染品质，或更改内容模式；滚动结束后，把 view 恢复到原状态，（如有需要）并更新其内容。
 
 ### Do Not Customize Controls by Embedding Subviews ###
 
-
+尽管技术上可以把 subview 添加到标准的系统控件（继承自 UIControl 的对象）里，但你永远不要这样自定义 view. 支持自定义的控件是通过 UIControl 类自己的显式接口实现的，如 UIButton 类有设置 title 和背景图片的方法。使用定义好的 customization points 可使你的代码总能正常工作，而通过在按钮中嵌入一个自定义图片或标签以规避 (circumvent) 这些方法，则一旦按钮的实现发生改变，就可能导致程序行为失常。
 
 # Windows #
 
+每个 iOS 程序都需要至少一个窗口——一个 UIWindow 类的实例——而有些程序则有多个窗口。窗口对象有以下职责：
+
+- 包含程序的可见内容；
+- 在把触摸事件分发给 view 或其他程序对象过程中扮演着重要角色；
+- It works with your application's view controllers to facilitate orientation changes.
+
+iOS 的窗口没有标题栏、关闭框，或其他视觉装饰。窗口总是一个空的容器，容纳若干个 view. 程序也不通过显示新窗口来改变内容，而是通过改变窗口中最前端的 view 来改变所显示的内容。
+
+多数 iOS 程序在其生命周期内只创建和使用一个窗口，这个窗口跨越设备的整个主屏幕，在程序生命的早期从主 nib 文件中加载（或以编程方式创建）。但若程序支持使用外接显示器作视频输出，还可创建额外的窗口以在外接显示器上显示内容。所有其他窗口通常都是由系统为响应特定的事件——如呼入的电话——而创建的。
+
+## Tasks that Involve Windows ##
+
+对许多程序来说，唯一需要与窗口交互的是启动时创建窗口。其实还可使用程序的窗口对象执行若干任务：
+
+- 使用窗口对象把点或矩形转换成、或转换自窗口的本地 (local) 坐标系统。
+- 使用窗口通知跟踪与窗口相关的变化。窗口在显示、隐藏、接受或放弃 key status 时都会产生通知。可利用这些通知在程序的其他部分执行一些操作。
+
+## Creating and Configuring a Window ##
+
+可以编程方式创建及配置程序的主窗口，也可使用 Interface Builder. 不管哪种方式，都应在程序启动时创建之，并 retain 它，以及在 App Delegate 中存储对它的引用。若需创建额外的窗口，就请让程序在需要时才惰性地创建之。例如，程序支持外接显示器，它应等到显示器接入时才创建相应的窗口。而对于主窗口，不管程序被启动到前端还是后端 (foreground or background), 它都应在启动时被创建。创建及配置窗口对程序自己来说不是一个代价高昂的操作，但它若直接被启动到后端，那就要避免使窗口可见——直到程序进入前端。
+
+### Creating Windows in Interface Builder ###
+
+使用 Interface Builder 可轻而易举地创建程序主窗口，因为 Xcode project 模板已为你搞定了。每个 Xcode 应用程序工程都包含一个主 nib 文件（通常名为 MainWindow.xib 或其变形），其中就包含了程序的主窗口。此外，这些模板还在 App Delegate 对象中为主窗口定义了 outlet, 可用以在代码中访问窗口对象。
+
+重要：在 Interface Builder 中创建窗口时，推荐在 Attributes Inspector 中启用 "Full Screen at Launch" 选项。若该选项未启用，而窗口又比目标设备的屏幕小，某些 view 就可能收不到触摸事件。这是因为窗口（像所有的 view 一样）不接收其边界矩形之外的触摸事件，而 view 默认又未被裁到窗口边界，因此虽然这些 view 仍然可见，但事件不会到达它们。启用 "Full Screen at Launch" 选项可使窗口针对当前屏幕适当地调整。
+
+若是使用 Interface Builder 改造一个 project, 创建窗口就是简单地向 nib 文件中拖拽一个窗口对象。当然，你还应该：
+
+要在运行时访问窗口，请为窗口连接一个 outlet, 通常定义在 App Delegate 中，或 nib 文件的 File's Owner 中。
+若要把新 nib 文件作为程序的主 nib 文件，请把 Info.plist 中 NSMainNibFile 键的值改为该 nib 文件名。这可以确保 App Delegate 对象的 `application:didFinishLaunchingWithOptions:` 方法被调用时，nib 文件已被加载并可用。关于创建及配置 nib 文件，请参阅 Interface Builder User Guide. 关于怎样在运行时把 nib 文件载入程序，请参阅 Nib Files in Resource Programming Guide.
+
+### Creating a Window Programmatically ###
+
+若偏好于以编程方式创建程序的主窗口，请在 App Delegate 对象的 application:didFinishLaunchingWithOptions: 方法中包含类似以下的代码：
+
+``` Objective-C
+self.window = [[[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]] autorelease];
+```
+
+其中 `self.window` 是 App Delegate 中一个已声明的属性，用以保存窗口对象。若是为外部显示器创建窗口，则应将其赋给另一个变量，并指定表示该显示器的非主 UIScreen 对象的边界。
+
+创建窗口时，总应把窗口的尺寸设置为屏幕的全部边界，不要为适应状态栏若其他项目而减小窗口的大小。状态栏总是浮在窗口之上，故唯一要收缩以适应状态栏的是放在窗口里的 view. 若使用 view controller， 则 view controller 应自动调整 view 的尺寸。
+
+### Adding Content to Your Window ###
+
+每个窗口通常只有一个 root view 对象（由一个相应的 view controller 管理），后者包含其他所有呈现内容的 view. 使用单个 root view 简化了更改界面的流程：要显示新内容，只需替换 root view 即可；要在窗口中安置新的 view, 调用 `addSubview:` 方法即可。如安置由 view controller 管理的 view, 可使用类似以下代码：
+
+``` Objective-C
+[window addSubview:viewController.view];
+```
+
+除了以上代码，还可在 nib 文件中配置窗口对象的 `rootViewController` 属性，该属性利用 nib 文件提供了一种配置 root view 的便捷方式而无须编程。若该属性在窗口从 nib 文件中加载时被设置，UIKit 会自动把 view controller 相关联的 view 安置为窗口的 root view. 该属性仅用于安置 root view, 而未被窗口用于与 view controller 通信。
+
+可使用任何 view 作为窗口的 root view, 如作为其他 subview 的容器的通用 UIView 对象，或标准的 system view, 或自定义的 view. 常用作 root view 的标准 system view 如 scroll view, table view, image view.
+
+配置窗口的 root view 时，由你负责设置它在窗口中的初始尺寸和位置：
+
+- 对于不包含状态栏、或显示半透明状态栏的程序，请把 root view 的尺寸设置得与窗口尺寸相符。
+- 对于显示不透明的状态栏程序，请把 root view 置于状态栏下面，并适当减小其尺寸。从 root view 的高度中减去状态栏的高度可避免 root view 的顶部被遮挡。
+
+注意：若窗口的 root view 由 container view controller 提供（如 tab bar controller, navigation controller, split-view controller），则无须自己设置其初始尺寸和位置。Container view controller 会根据状态栏是否可见自动设置之。
+
+#### Changing the Window Level ####
+
+每个 UIWindow 对象都有一个可配置的 windowLevel 属性，决定着该窗口相对于其他窗口如何放置。多数情况下，你无须更改它，新窗口在创建时会被自动赋予 normal window level, 表示该窗口呈现的是与程序相关的内容。高一些的 window levels 保留给需要浮在程序内容之上的信息，如系统状态栏或警告消息。尽管可自己为窗口赋予这些 levels, 但系统通常会在你使用特定的界面时自动为你配置好这些。如显示/隐藏状态栏，或显示警告消息时，系统会自动创建必要的窗口以显示之。
+
+## Monitoring Window Changes ##
+
+可使用以下与窗口相关的通知，跟踪窗口的显现与消失：
+
+- UIWindowDidBecomeVisibleNotification
+- UIWindowDidBecomeHiddenNotification
+- UIWindowDidBecomeKeyNotification
+- UIWindowDidResignKeyNotification
+
+These notifications are delivered in response to programmatic changes in your application's windows. 程序显示或隐藏窗口时，UIWindowDidBecomeVisibleNotification and UIWindowDidBecomeHiddenNotification 通知会相应地被发出。但转入后台运行状态时，这些通知不会被发出。程序在后台时，即使窗口未显示在屏幕上，它在程序的上下文 (context) 中也仍被认为是可见的。
+
+IWindowDidBecomeKeyNotification and UIWindowDidResignKeyNotification 通知助你跟踪哪个窗口是 key window —— 即当前接收键盘事件及其他非触摸相关事件的窗口。触摸事件被分派到触摸发生的那个窗口，而没有相关坐标的事件则被分派到 key window. 某一时刻只能有一个 key window. 
+
+## Displaying Content on an External Display ##
+
+要在外部显示器上显示内容，必须创建一个额外的窗口，并将其关联到表示外部显示器的 screen 对象。新窗口通常默认关联到设备的主屏幕，更改窗口相关联的 screen 对象会使该窗口的内容被重定向 (reroute) 到相应的显示器。窗口被关联到正确的 screen 后，就可以像主 screen 一样向其中添加及显示 view 了。
+
+UIScreen 类维护一个 screen 对象列表，表示可用的硬件显示器。通常只有一个 screen 对象，表示着 iOS 设备的主显示器，但支持外接显示器的设备还可以有额外的 screen 对象。支持外接显示器的设备包括带视网膜显示屏的 iPhone, iPod Touch 和 iPad. 较旧的设备，如 iPhone 3GS, 不支持外接显示器。
+
+注意：由于外部显示器实质上只是一个视频输出，故不要期望关联到外部显示器的窗口会有触摸事件。另外，程序需负责更新外部显示器窗口的内容，故要镜像主窗口，需要为外部显示器窗口创建与主窗口一样的 view 副本，并随着主窗口一起更新。
+
+在外部显示器上显示内容的步骤可总结为：
+
+1. 在程序启动时注册屏幕连接与断开的通知。
+1. 要在外部显示器上显示内容时，创建并配置一个窗口。
+	- 使用 `UIScreen.screens` 属性获得外部显示器的 screen 对象。
+	- 创建一个 UIWindow 对象，并根据屏幕或内容适当调整其大小。
+	- Assign the UIScreen object for the external display to the screen property of the window.
+	- 按需调整 screen 对象的分辨率。
+	- 向窗口中增加适当的 view.
+1. 正常显示及更新该窗口。
+
+### Handling Screen Connection and Disconnection Notifications ###
+
+屏幕连接与断开通知对优雅地处理外部显示器变化是很关键的。用户连接或断开显示器时，系统会向程序发送适当的通知，使用这些通知更新程序状态，以及创建或释放与外部显示器关联的窗口。
+
+连接与断开通知可以发生在任何时刻，即使是程序在后台挂起 (suspended in the background) 时。因此最好在一个存在于程序整个运行时的对象中观测这些通知，如 App Delegate. 若程序被挂起，这些消息会排除等候 (queued)，直到程序退出挂起状态并启动到前端或后端。
+
+以下代码展示了注册连接与断开通知的方法，它由 App Delegate 在初始化时调用，但你也可以在其他地方注册这些通知。
+
+``` Objective-C
+- (void)setupScreenConnectionNotificationHandlers
+{
+    NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
+    [center addObserver:self selector:@selector(handleScreenConnectNotification:) name:UIScreenDidConnectNotification object:nil];
+    [center addObserver:self selector:@selector(handleScreenDisconnectNotification:) name:UIScreenDidDisconnectNotification object:nil];
+}
+
+// handler methods below:
+
+- (void)handleScreenConnectNotification:(NSNotification*)aNotification
+{
+    UIScreen* newScreen = [aNotification object];
+    CGRect screenBounds = newScreen.bounds; 
+    if (!_secondWindow) {
+        _secondWindow = [[UIWindow alloc] initWithFrame:screenBounds];
+        _secondWindow.screen = newScreen; 
+        // Set the initial UI for the window.
+        [viewController displaySelectionInSecondaryWindow:_secondWindow];
+    }
+}
+ 
+- (void)handleScreenDisconnectNotification:(NSNotification*)aNotification
+{
+    if (_secondWindow) {
+        // Hide and then delete the window.
+        _secondWindow.hidden = YES;
+        [_secondWindow release];
+        _secondWindow = nil; 
+        // Update the main screen based on what is showing here.
+        [viewController displaySelectionOnMainScreen];
+    } 
+}
+```
+
+若外部显示器接入设备时程序处于活动状态，应（立即）为它创建一个窗口并显示一些内容——不必是最终要显示的内容，比如若程序尚未准备好使用此外部显示器，可只暂时只显示一些点位符。若不为该屏幕创建窗口，或创建了窗口但不显示它，则外部显示器将黑屏 (displays a black field).
+
+### Configuring a Window for an External Display ###
+
+要把窗口显示在外部显示器上，必须为它关联正确的 screen 对象，这一过程涉及定位到适当的 UIScreen 对象并将其赋给窗口的 `screen` 属性。可调用 `[UIScreen screens]` 类方法获得 screen 对象数组，该数组总是包含至少一个 screen 对象，表示主屏幕。若还有第二个对象，则表示的是外接显示器。
+
+以下代码通过 `UIWindow.hidden = NO` 显示窗口，而不是调用 `makeKeyAndVisible`, 这是因为该窗口只包含静态内容，且未被用于处理事件。
+
+``` Objective-C
+// called at app startup
+- (void)checkForExistingScreenAndInitializeIfPresent
+{
+    if ([[UIScreen screens] count] > 1)
+    {        
+        // The main screen is always at index 0.
+        UIScreen* secondScreen = [[UIScreen screens] objectAtIndex:1];
+        CGRect screenBounds = secondScreen.bounds; 
+        _secondWindow = [[UIWindow alloc] initWithFrame:screenBounds];
+        _secondWindow.screen = secondScreen;
+ 
+        // Add a white background to the window
+        UIView* whiteField = [[UIView alloc] initWithFrame:screenBounds];
+        whiteField.backgroundColor = [UIColor whiteColor]; 
+        [_secondWindow addSubview:whiteField];
+        [whiteField release];
+ 
+        // Center a label in the view.
+        NSString* noContentString = [NSString stringWithFormat:@"<no content>"];
+        CGSize stringSize = [noContentString sizeWithFont:[UIFont systemFontOfSize:18]]; 
+        CGRect labelSize = CGRectMake((screenBounds.size.width - stringSize.width) / 2.0, (screenBounds.size.height - stringSize.height) / 2.0, stringSize.width, stringSize.height);
+        UILabel* noContentLabel = [[UILabel alloc] initWithFrame:labelSize];
+        noContentLabel.text = noContentString;
+        noContentLabel.font = [UIFont systemFontOfSize:18];
+        [whiteField addSubview:noContentLabel];
+ 
+        // Go ahead and show the window.
+        _secondWindow.hidden = NO;
+    }
+}
+```
+
+重要：显示窗口之前，总是应先为其关联一个屏幕。尽管可以更改当前可见窗口的屏幕，但这是一个高昂的操作，应当避免。
+
+一旦外部屏幕的窗口显示了，就可以像其他任何窗口一样更新它了。
+
+### Configuring the Screen Mode of an External Display ###
+
+根据窗口的内容不同，在把窗口关联到屏幕之前，可能需要更改屏幕模式。许多屏幕支持多种分辨率，有些还使用不同的像素宽高比。Screen 对象默认使用最常用的屏幕模式，但你可以更改便之适配内容。如使用 OpenGL ES 实现游戏，其 textures 是为 640 x 480 像素的屏幕设计的，你可能会更改默认具有较高分辨率的屏幕的模式。更改屏幕模式需要在把 UIScreen 对象关联到窗口之前完成。UIScreenMode 类定义了单个屏幕模式的一些 attributes. 可遍历 UIScreen.availableModes 属性以寻找一个满足需求的屏幕模式。
+
 # Views #
 
+由于 view 对象是程序与用户互动的主要方式，故它们有许多责任，如：
+
+- Layout and subview management
+    - A view defines its own default resizing behaviors in relation to its parent view.
+    - A view can manage a list of subviews.
+    - A view can override the size and position of its subviews as needed.
+    - A view can convert points in its coordinate system to the coordinate systems of other views or the window.
+- Drawing and animation
+    - A view draws content in its rectangular area.
+    - Some view properties can be animated to new values.
+- Event handling
+    - A view can receive touch events.
+    - A view participates in the responder chain.
+
+本章专注于创建、管理、绘制 view, 以及 view hierarchy 的布局和管理。关于如何处理触摸事件（及其他事件），请参阅 Event Handling for iOS.
+
+## Creating and Configuring View Objects ##
+
+You create views as self-contained objects either programmatically or using Interface Builder, and then you
+assemble them into view hierarchies for use.
+
+### Creating View Objects Using Interface Builder ###
+
+创建 view 最简单的方式是图形化的 Interface Builder. Because Interface Builder uses live view objects — that is, actual instances of the view classes — what you see at design time is what you get at runtime. 把这些 live 对象存储在一个 nib 文件里，后者是一个资源文件，保存对象的状态和配置。
+
+通常用 nib 文件存储一个 view controller 的整个 view hierarchy. The top level of the nib file usually contains a single view object that represents your view controller's view (view controller 自己通常由 File's Owner 对象表示). Top-level view 的尺寸应针对目标设备作适当的调整，它还包含着所有其他要显示的 view. 很少使用 nib 只存储 view controller's view hierarchy 的一部分。
+
+使用 nib 文件时，只需使用 nib 文件信息初始化 view controller, 后者会在适当的时机加载及卸载 view 对象。若 nib 文件未与 view controller 关联，可使用 NSBundle 或 NINib 对象手工加载其内容，它们会使用 nib 文件中的数据重建 view 对象。
+
+关于怎样使用 Interface Builder, 请参阅 Interface Builder User Guide. 关于 view controller 怎样加载及管理 nib 文件，请参阅 View Controller Programming Guide for iOS 中的 Creating Custom Content View Controllers. 关于怎样以编程方式从 nib 文件中加载 view, 请参阅 Resource Programming Guide 中的 Nib Files.
+
+### Creating View Objects Programmatically ###
+
+也可使用标准的 allocation/initialization 模式以编程方式创建 view. View 默认的初始化方法是 `initWithFrame:`, 它相对于（即将与之建立起关系的）superview 设置了该 view 的初始尺寸和位置。以下代码创建一个通用的 UIView 对象：
+
+``` Objective-C
+UIView* myView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 100, 100)];
+```
+
+注意：尽管所有的 view 都支持 `initWithFrame:` 方法，但有些可能有更优先的初始化方法，请参阅相应类的文档。
+
+创建 view 之后，在其可见之前必须将其添加到一个窗口或窗口中的另一个 view. 请参阅 [Addig and Removing Subviews](#Addig and Removing Subviews).
+
+### Setting the Properties of a View ###
+
+UIView 类有若干 declared properties, 控制 view 的外观和行为，这些属性都有适当的默认值，可通过 Interface Builder 的 Inspector 窗口配置。以下是这些属性中最常用的一些（以及一些方法）：
+
+alpha, hidden, opaque: 这些属性影响 view 的不透明度/透明度。`alpha` 和 `hidden` 直接更改 view 的透明度。`opacity` 属性告诉系统怎样合成 (composite) view. 若 view 完全不透明，请置 `UIView.opaque = YES`, 这样它下面的内容就完全不会显现出来，还可以避免一些不必要的合成操作，从而提高性能。
+bounds, frame, center, transform: 这些属性影响 view 的尺寸和位置。`center` 和 `frame` 属性相对于 superview 表示 view 的位置，`frame` 还包括其尺寸。`bounds` 属性以 view 自己的坐标系统定义其可见内容区域。`transform` 属性以复杂的方式动画或移动整个 view. 若当前 transform 不是恒等变换，则 `frame` 属性的值是未定义的，需要忽略。
+autoresizingMask, autoresizesSubviews: 这些属性影响 view 及其 subview 自动调整尺寸的行为。`autoresizingMask` 属性控制 view 如何影响其 superview 边界的变化。`autoresizesSubviews` 属性控制当前 view's subviews 是否会被调整大小。
+contentMode, contentStretch, contentScaleFactor: 这些属性影响 view 中内容的渲染行为。`contentMode` 和 `contentStretch` 属性决定 view 的宽或高变化时其中的内容应如何对待。仅当欲自定义 view 在高分辨率屏幕上的绘图行为时才使用 `contentScaleFactor` 属性。
+gestureRecognizers, userInteractionEnabled, multipleTouchEnabled, exclusiveTouch: 这些属性影响 view 怎样处理触摸事件。`gestureRecognizers` 属性包含附加到该 view 上的 gesture recognizers. 其他属性控制该 view 支持什么触摸事件。
+These properties affect how your view processes touch events. The
+gestureRecognizers property contains gesture recognizers attached
+to the view. The other properties control what touch events the view
+supports.
+For information about how to respond to events in your views, see Event
+Handling Guide for iOS .
+backgroundColor, subviews, drawRect: method, layer, (layerClass method): These properties and methods help you manage the actual content of
+your view. For simple views, you can set a background color and add
+one or more subviews. The subviews property itself contains a read-only
+list of subviews, but there are several methods for adding and
+rearranging subviews. For views with custom drawing behavior, you
+must override the drawRect: method.
+For more advanced content, you can work directly with the view’s Core
+Animation layer. To specify an entirely different type of layer for the
+view, you must override the layerClass method.
+
+For information about the basic properties common to all views, see UIView Class Reference . For more information
+about specific properties of a view, see the reference documentation for that view.
+
+### Tagging Views for Future Identification ###
+
+The UIView class contains a tag property that you can use to tag individual view objects with an integer value.
+You can use tags to uniquely identify views inside your view hierarchy and to perform searches for those views
+at runtime. (Tag-based searches are faster than iterating the view hierarchy yourself.) The default value for the
+tag property is 0.
+To search for a tagged view, use the viewWithTag: method of UIView. This method performs a depth-first
+search of the receiver and its subviews. It does not search superviews or other parts of the view hierarchy.
+Thus, calling this method from the root view of a hierarchy searches all views in the hierarchy but calling it
+from a specific subview searches only a subset of views.
+
+## Creating and Managing a View Hierarchy ##
+
+### Adding and Removing Subviews ###
+
+### Hiding Views ###
+
+### Locating Views in a View Hierarchy ###
+
+### Translating, Scaling, and Rotating Views ###
+
+### Converting Coordinates in the View Hierarchy ###
+
+## Adjusting the Size and Position of Views at Runtime ##
+
+### Being Prepared for Layout Changes ###
+
+### Handling Layout Changes Automatically Using Autoresizing Rules ###
+
+### Tweaking the Layout of Your Views Manually ###
+
+## Modifying Views at Runtime ##
+
+## Interacting with Core Animation Layers ##
+
+### Changing the Layer Class Associated with a View ###
+
+### Embedding Layer Objects in a View ###
+
+## Defining a Custom View ##
+
+### Checklist for Implementing a Custom View ###
+
+### Initializing Your Custom View ###
+
+### Implementing Your Drawing Code ###
+
+### Responding to Events ###
+
+### Cleaning Up After Your View ###
 
 # Animations #   
 本章讲的动画技术都是 Core Animation 内置的，你要做的就是触发动画，对每一帧的渲染就是 Core Animation 的事了。
