@@ -529,44 +529,41 @@ UIView* myView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 100, 100)];
 
 UIView 类有若干 declared properties, 控制 view 的外观和行为，这些属性都有适当的默认值，可通过 Interface Builder 的 Inspector 窗口配置。以下是这些属性中最常用的一些（以及一些方法）：
 
-alpha, hidden, opaque: 这些属性影响 view 的不透明度/透明度。`alpha` 和 `hidden` 直接更改 view 的透明度。`opacity` 属性告诉系统怎样合成 (composite) view. 若 view 完全不透明，请置 `UIView.opaque = YES`, 这样它下面的内容就完全不会显现出来，还可以避免一些不必要的合成操作，从而提高性能。
-bounds, frame, center, transform: 这些属性影响 view 的尺寸和位置。`center` 和 `frame` 属性相对于 superview 表示 view 的位置，`frame` 还包括其尺寸。`bounds` 属性以 view 自己的坐标系统定义其可见内容区域。`transform` 属性以复杂的方式动画或移动整个 view. 若当前 transform 不是恒等变换，则 `frame` 属性的值是未定义的，需要忽略。
-autoresizingMask, autoresizesSubviews: 这些属性影响 view 及其 subview 自动调整尺寸的行为。`autoresizingMask` 属性控制 view 如何影响其 superview 边界的变化。`autoresizesSubviews` 属性控制当前 view's subviews 是否会被调整大小。
-contentMode, contentStretch, contentScaleFactor: 这些属性影响 view 中内容的渲染行为。`contentMode` 和 `contentStretch` 属性决定 view 的宽或高变化时其中的内容应如何对待。仅当欲自定义 view 在高分辨率屏幕上的绘图行为时才使用 `contentScaleFactor` 属性。
-gestureRecognizers, userInteractionEnabled, multipleTouchEnabled, exclusiveTouch: 这些属性影响 view 怎样处理触摸事件。`gestureRecognizers` 属性包含附加到该 view 上的 gesture recognizers. 其他属性控制该 view 支持什么触摸事件。
-These properties affect how your view processes touch events. The
-gestureRecognizers property contains gesture recognizers attached
-to the view. The other properties control what touch events the view
-supports.
-For information about how to respond to events in your views, see Event
-Handling Guide for iOS .
-backgroundColor, subviews, drawRect: method, layer, (layerClass method): These properties and methods help you manage the actual content of
-your view. For simple views, you can set a background color and add
-one or more subviews. The subviews property itself contains a read-only
-list of subviews, but there are several methods for adding and
-rearranging subviews. For views with custom drawing behavior, you
-must override the drawRect: method.
-For more advanced content, you can work directly with the view’s Core
-Animation layer. To specify an entirely different type of layer for the
-view, you must override the layerClass method.
-
-For information about the basic properties common to all views, see UIView Class Reference . For more information
-about specific properties of a view, see the reference documentation for that view.
+- alpha, hidden, opaque: 这些属性影响 view 的不透明度/透明度。`alpha` 和 `hidden` 直接更改 view 的透明度。`opacity` 属性告诉系统怎样合成 (composite) view. 若 view 完全不透明，请置 `UIView.opaque = YES`, 这样它下面的内容就完全不会显现出来，还可以避免一些不必要的合成操作，从而提高性能。
+- bounds, frame, center, transform: 这些属性影响 view 的尺寸和位置。`center` 和 `frame` 属性相对于 superview 表示 view 的位置，`frame` 还包括其尺寸。`bounds` 属性以 view 自己的坐标系统定义其可见内容区域。`transform` 属性以复杂的方式动画或移动整个 view. 若当前 transform 不是恒等变换，则 `frame` 属性的值是未定义的，需要忽略。
+- autoresizingMask, autoresizesSubviews: 这些属性影响 view 及其 subview 自动调整尺寸的行为。`autoresizingMask` 属性控制 view 如何影响其 superview 边界的变化。`autoresizesSubviews` 属性控制当前 view's subviews 是否会被调整大小。
+- contentMode, contentStretch, contentScaleFactor: 这些属性影响 view 中内容的渲染行为。`contentMode` 和 `contentStretch` 属性决定 view 的宽或高变化时其中的内容应如何对待。仅当欲自定义 view 在高分辨率屏幕上的绘图行为时才使用 `contentScaleFactor` 属性。
+- gestureRecognizers, userInteractionEnabled, multipleTouchEnabled, exclusiveTouch: 这些属性影响 view 怎样处理触摸事件。`gestureRecognizers` 属性包含附加到该 view 上的 gesture recognizers. 其他属性控制该 view 支持什么触摸事件。
+- backgroundColor, subviews, drawRect: method, layer, (layerClass method): 这些属性和方法帮助你管理 view 的实际内容。对简单的 view, 可设置背景色及添加若干个 subview. `subviews` 属性包含了 subview 的只读列表，还有一些添加及组织 subview 的方法。对于带自定义绘图行为的 view, 必须 override `drawRect:` 方法。对于更高级的内容，可直接操作 view's Core Animation layer. 要为 view 指定一个完全不同的 layer 类型，必须 override `layerClass` 方法。 
 
 ### Tagging Views for Future Identification ###
 
-The UIView class contains a tag property that you can use to tag individual view objects with an integer value.
-You can use tags to uniquely identify views inside your view hierarchy and to perform searches for those views
-at runtime. (Tag-based searches are faster than iterating the view hierarchy yourself.) The default value for the
-tag property is 0.
-To search for a tagged view, use the viewWithTag: method of UIView. This method performs a depth-first
-search of the receiver and its subviews. It does not search superviews or other parts of the view hierarchy.
-Thus, calling this method from the root view of a hierarchy searches all views in the hierarchy but calling it
-from a specific subview searches only a subset of views.
+利用 `UIView.tag` 属性为其标记一个整数值，可用以唯一地标识 view hierarchy 中的某个 view、以及在运行时执行搜索（基于 tag 的搜索比遍历 view hierarchy 要快得多）。该属性的默认值是 0.
+
+`- (UIView *)viewWithTag:(NSInteger)tag` 方法在消息接收者及其 subview 中深度优先搜索匹配指定 tag 的 view, 不搜索 superview 及 view hierarchy 中的其他部分。
 
 ## Creating and Managing a View Hierarchy ##
 
+View 的组织结构既影响程序的视觉效果，也影响它如何响应变化和事件。如 view hierarchy 中的父子关系决定哪个对象可能处理某种触摸事件，也定义了每个 view 如何响应界面方向的变化。
+
+在时钟程序中，The tab bar and navigation views 是 UITabBarController 和 UINavigationController 提供的特殊 view hierarchies, 它们管理整体 UI 的一部分。  这两个栏之间的则属于时钟程序提供的自定义 view hierarchy.
+
+可以用 Interface Builder 以图形方式创建 view hierarchy, 也可以以编程方式创建。
+
+![Layered views in the Clock app](images/layered_views_in_the_clock_app.jpg)
+
 ### Adding and Removing Subviews ###
+
+- `- (void)addSubview:(UIView *)view` 方法向消息接收者的 subviews 列表末尾添加一个 subview.
+- `- insertSubview:atIndex:`, `- insertSubview:aboveSubview:`, `- insertSubview:belowSubview:` 在 subviews 列表中间添加一个 subview.
+- `- bringSubviewToFront:`, `- sendSubviewToBack:`, `- exchangeSubviewAtIndex:withSubviewAtIndex:` 更改在 subviews 列表中的相对顺序。这些方法比移除再重新插入快。
+- `- (void)removeFromSuperview` 把自己从 superview 中移除。
+
+把 subview 添加到 superview 时，subview 当前的 frame rectangle 表示了它在 supview 中的初始位置。如果它在 superview 的可视化边界之外，默认是不会被裁剪的，除非明确地置 superview 的属性 `clipsToBounds = YES`.
+
+When you add a subview to another view, UIKit notifies both the parent and child views of the change. If you implement custom views, you can intercept these notifications by overriding one or more of the willMoveToSuperview:, willMoveToWindow:, willRemoveSubview:, didAddSubview:, didMoveToSuperview, or didMoveToWindow methods. You can use these notifications to update any state information related to your view hierarchy or to perform additional tasks.
+
+After creating a view hierarchy, you can navigate it programmatically using the superview and subviews properties of your views. The window property of each view contains the window in which that view is currently displayed (if any). Because the root view in a view hierarchy has no parent, its superview property is set to nil. For views that are currently onscreen, the window object is the root view of the view hierarchy.
 
 ### Hiding Views ###
 
