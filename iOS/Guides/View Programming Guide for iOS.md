@@ -561,23 +561,95 @@ View 的组织结构既影响程序的视觉效果，也影响它如何响应变
 
 把 subview 添加到 superview 时，subview 当前的 frame rectangle 表示了它在 supview 中的初始位置。如果它在 superview 的可视化边界之外，默认是不会被裁剪的，除非明确地置 superview 的属性 `clipsToBounds = YES`.
 
-When you add a subview to another view, UIKit notifies both the parent and child views of the change. If you implement custom views, you can intercept these notifications by overriding one or more of the willMoveToSuperview:, willMoveToWindow:, willRemoveSubview:, didAddSubview:, didMoveToSuperview, or didMoveToWindow methods. You can use these notifications to update any state information related to your view hierarchy or to perform additional tasks.
+When you add a subview to another view, UIKit notifies both the parent and child views of the change. If you implement custom views, you can intercept these notifications by overriding one or more of the `willMoveToSuperview:, willMoveToWindow:, willRemoveSubview:, didAddSubview:, didMoveToSuperview, or didMoveToWindow` methods. You can use these notifications to update any state information related to your view hierarchy or to perform additional tasks.
 
-After creating a view hierarchy, you can navigate it programmatically using the superview and subviews properties of your views. The window property of each view contains the window in which that view is currently displayed (if any). Because the root view in a view hierarchy has no parent, its superview property is set to nil. For views that are currently onscreen, the window object is the root view of the view hierarchy.
+After creating a view hierarchy, you can navigate it programmatically using the `superview` and `subviews` properties of your views. `UIView.window` 属性表示 view 当前显示在哪个窗口（若有）。由于 view hierarchy 的 root view 没有父级，其 `superview` 属性的值为 nil. For views that are currently onscreen, the window object is the root view of the view hierarchy.
 
 ### Hiding Views ###
 
+要在视觉上隐藏 view, 可置 `UIView.hidden = YES` 或 `UIView.alpha = 0.0`. 隐藏的 view 不再接收触摸事件，但仍参与 autoresizing 及 view hierarchy 中的其他布局操作。需要在某一时刻再次显示 view 时，将其隐藏是个不错的操作。
+
+注意：如果被隐藏的 view 是当前的 first responder, 该 view 不会自动放弃 first responder 状态，针对 first responder 的事件仍会被分发给它。为避免这一点，你应在隐藏 view 是强制它放弃 first responder 状态。
+
+欲以动画方式实现 view 从可见到隐藏的过渡（反之亦然），必须使用其 `alpha` 属性——`UIView.hidden` 不是一个可以动画的属性。
+
 ### Locating Views in a View Hierarchy ###
+
+定位 view hierarchy 中的 view:
+
+- 在适当位置（如目标 view 所在的 view controller）存储指向相关 view 的指针，这是较常用的方式。如对于 Interface Builder 创建的 view, 可用 outlet; 对于编程创建的 view, 可用私有成员变量存储对其引用。Whether you use outlets or private member variables, you are responsible for retaining the views as needed and then releasing them as well. The best way to ensure objects are retained and released properly is to use declared properties.
+- 为目标 view 的 `tag` 属性赋予一个唯一的整数，使用 `viewWithTag:` 方法定位之。这样可减少 hard-coded 依赖，是一种更动态、更灵活的方式。
 
 ### Translating, Scaling, and Rotating Views ###
 
+transform 变换，translate 平移，scale 缩放，rotate 旋转，identity transform 恒等变换
+
+每个 view 都有一个相关联的仿射变换，可用以平移、缩放或旋转 view 的内容。View transform 修改 view 的最终外观，常用以实现滚动、动画，及其他视觉效果。
+
+UIView 有一个 `@property(nonatomic) CGAffineTransform transform` 属性，默认值为恒等变换。可在任意时刻为其赋予一个新值。增加多个变换时，增加的顺序影响着最终变换结果。所有的变换都相对于 view 的中心点，如缩放改变的是其宽和高，但不改变其中心点。
+
 ### Converting Coordinates in the View Hierarchy ###
+
+触摸事件中的位置是用窗口的坐标系统表示的，而 view 通常需要用其自己的局部坐标系统表示这些信息。UIView 类定义了以下方法来转换坐标：
+
+- - (CGPoint)convertPoint:(CGPoint)point fromView:(UIView *)view
+- - (CGRect)convertRect:(CGRect)rect fromView:(UIView *)view
+- - (CGPoint)convertPoint:(CGPoint)point toView:(UIView *)view
+- - (CGRect)convertRect:(CGRect)rect toView:(UIView *)view
+
+以上方法的名字就有自解释性。如果把其中的 `view` 参数指定为 nil, 则转换自/转换至（被调用这些方法的那个） view 所属窗口的坐标系统。
+
+此外 UIWindow 类也定义了一些类似的转换方法：
+
+- convertPoint:fromWindow:
+- convertRect:fromWindow:
+- convertPoint:toWindow:
+- convertRect:toWindow:
+
+When converting coordinates in rotated views, UIKit converts rectangles under the assumption that you want the returned rectangle to reflect the screen area covered by the source rectangle. Figure 3-3 shows an example of how rotations can cause the size of the rectangle to change during a conversion. In the figure, an outer parent view contains a rotated subview. Converting a rectangle in the subview’s coordinate system to the parent’s coordinate system yields a rectangle that is physically larger. This larger rectangle is actually the smallest rectangle in the bounds of outerView that completely encloses the rotated rectangle.
+
+![Converting values in a rotated view](images/converting_values_in_a_rotated_view.jpg)
 
 ## Adjusting the Size and Position of Views at Runtime ##
 
+每当 view 的大小发生改变时，其 subview 的位置和大小也必然相应地改变。UIView 类既支持对 view hierarchy 中的 view:
+
+- 使用自动布局，为每个 view 设置一些规则，然后就不用手工管理调整大小的操作了
+- 使用手动布局，则需在需要时手动调整位置和大小。
+
 ### Being Prepared for Layout Changes ###
 
+Layout changes can occur whenever any of the following events happens in a view:
+
+- The size of a view’s bounds rectangle changes.
+- An interface orientation change occurs, which usually triggers a change in the root view’s bounds rectangle.
+- The set of Core Animation sublayers associated with the view's layer changes and requires layout.
+- Your application forces layout to occur by calling the `setNeedsLayout` or `layoutIfNeeded` method of a view.
+- Your application forces layout by calling the `setNeedsLayout` method of the view's underlying layer object.
+
 ### Handling Layout Changes Automatically Using Autoresizing Rules ###
+
+Superview 的大小发生变化时，其 subview 的位置和大小通常也需要配合着发生改变，是否改变由 superview 的 `autoresizesSubviews` 属性决定。若该属性值为 YES, 则各个 subview 的 `autoresizingMask` 属性决定着其位置和大小应如何变化。Subview 的变化同样也会触发它自己的 subview 的类似变化……
+
+以下是 `autoresizingMask` 的一些可能取值，多个值用按位“或”连接起来。若使用 Interface Builder, 则可用 Autoresizing Inspector 设置。
+
+- UIViewAutoresizingNone: The view does not autoresize. (This is the default value.)
+- UIViewAutoresizingFlexibleHeight: The view’s height changes when the superview’s height changes. If this constant is not included, the view’s height does not change.
+- UIViewAutoresizingFlexibleWidth: The view’s width changes when the superview's width changes. If this constant is not included, the view’s width does not change.
+- UIViewAutoresizingFlexibleLeftMargin: The distance between the view’s left edge and the superview’s left edge grows or shrinks as needed. If this constant is not included, the view’s left edge remains a fixed distance from the left edge of the superview.
+- UIViewAutoresizingFlexibleRightMargin: The distance between the view’s right edge and the superview’s right edge grows or shrinks as needed. If this constant is not included, the view’s right edge remains a fixed distance from the right edge of the superview.
+- UIViewAutoresizingFlexibleBottomMargin: The distance between the view’s bottom edge and the superview’s bottom edge grows or shrinks as needed. If this constant is not included, the view’s bottom edge remains a fixed distance from the bottom edge of the superview.
+- UIViewAutoresizingFlexibleTopMargin: The distance between the view’s top edge and the superview’s top edge grows or shrinks as needed. If this constant is not included, the view’s top edge remains a fixed distance from the top edge of the superview.
+
+Figure 3-4 shows a graphical representation of how the options in the autoresizing mask apply to a view. The presence of a given constant indicates that the specified aspect of the view is flexible and may change when the superview’s bounds change. The absence of a constant indicates that the view’s layout is fixed in that aspect. When you configure a view that has more than one flexible attribute along a single axis, UIKit distributes any size changes evenly among the corresponding spaces.
+
+The easiest way to configure autoresizing rules is using the Autosizing controls in the Size inspector of Interface Builder. The flexible width and height constants from the preceding figure have the same behavior as the width and size indicators in the Autosizing controls diagram. However, the behavior and use of margin indicators is effectively reversed. In Interface Builder, the presence of a margin indicator means that the margin has a fixed size and the absence of the indicator means the margin has a flexible size. Fortunately, Interface Builder provides an animation to show you how changes to the autoresizing behaviors affect your view.
+
+Important: If a view’s transform property does not contain the identity transform, the frame of that view is undefined and so are the results of its autoresizing behaviors.
+
+After the automatic autoresizing rules for all affected views have been applied, UIKit goes back and gives each view a chance to make any necessary manual adjustments to its superview. For more information about how to manage the layout of views manually, see Tweaking the Layout of Your Views Manually.
+
+![View autoresizing mask constants](images/uiview_autoresize_masks.jpg)
 
 ### Tweaking the Layout of Your Views Manually ###
 
