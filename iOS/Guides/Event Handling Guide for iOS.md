@@ -26,7 +26,7 @@ When iOS recognizes an event, it passes the event to the initial object that see
 
 > As a rule of thumb, you write your own custom touch-event handling when your app’s response to touch is tightly coupled with the view itself, such as drawing under a touch.
 
-对有些程序来说，使用 UIKit 控件和 gesture recognizer 处理触摸事件已足矣。即使有自定义 view, 还可以使用 gesture recognizer. 一个经验法则是，当对触摸事件的响应与 view 自身紧密耦合时（如触摸绘图），（才需要）编写自定义的触摸事件处理逻辑。 这些情况下，你负责底层的事件处理，你需要实现触摸方法，在其中分析原始的 (raw) 触摸事件并适当地响应。
+对有些程序来说，使用 UIKit 控件和 gesture recognizer 处理触摸事件已足矣。即使有自定义 view, 还可以使用 gesture recognizer. 一个经验法则是，当对触摸事件的响应与 view 自身紧密耦合时（如触摸绘图），（才需要）编写自定义的触摸事件处理逻辑。 这些情况下，你负责底层的事件处理，需要实现触摸方法，在其中分析原始的 (raw) 触摸事件并适当地响应。
 
 
 ### An App Receives Motion Events When Users Move Their Devices ###
@@ -49,11 +49,74 @@ Gesture recognizer 把底层的事件处理代码转换成高层的行为。它�
 
 ### Built-in Gesture Recognizers Recognize Common Gestures ###
 
+UIKit built-in gesture recognizers:
+
+- Tapping (any number of taps): UITapGestureRecognizer
+- Pinching in and out (for zooming a view): UIPinchGestureRecognizer
+- Panning or dragging: UIPanGestureRecognizer
+- Swiping (in any direction): UISwipeGestureRecognizer
+- Rotating (fingers moving in opposite directions): UIRotationGestureRecognizer
+- Long press (also known as “touch and hold”): UILongPressGestureRecognizer
+
+应当仅以用户期望的方式响应手势。
+
 ### Gesture Recognizers Are Attached to a View ###
+
+Gesture recognizer 与 view 是多对一关系，因为一个 view 可能响应多种手势。触摸发生时，gesture recognizer 比 view 先收到消息，于是前者可代表 (on behalf of) 后者对触摸作出响应。
 
 ### Gestures Trigger Action Messages ###
 
+Gesture recognizer 识别手势后，向 target 发送一个 action 消息。要创建一个 gesture recognizer, 请使用一个 target 和一个 action 初始化之。
+
+Discrete and continuous gestures:
+
+- 离散手势，如点击，只发生一次。Gesture recognizer 只向 target 发送一次 action 消息。
+- 连续手势，如 pinching, 在一段时间内连续发生。Gesture recognizer 向 target 持续发送 action 消息，直到手势结束。
+
 ## Responding to Events with Gesture Recognizers ##
+
+使用内置 gesture recognizer 的 3 个步骤：
+
+1. 创建并配置 gesture recognizer 实例。这一步包括分派一个 target, action, 有时还要设置特定 gesture recognizer 的属性。
+1. 把 gesture recognizer 附加到一个 view.
+1. 实现 action method 以处理手势。
+
+### Adding a Gesture Recognizer via Interface Builder ###
+
+把 gesture recognizer 从 Object library 拖拽到一个 view, 这样前者就自动附加到后者了。
+创建 action/outlet.
+
+``` Objective-C
+@interface APLGestureRecognizerViewController ()
+@property (nonatomic, strong) IBOutlet UITapGestureRecognizer *tapRecognizer;
+@end
+ 
+@implementation
+- (IBAction)displayGestureForTapRecognizer:(UITapGestureRecognizer *)recognizer
+     // Will implement method later...
+}
+@end
+```
+
+### Adding a Gesture Recognizer Programmatically ###
+
+通常在 `viewDidLoad` 方法中创建 gesture recognizer:
+
+``` Objective-C
+- (void)viewDidLoad {
+     [super viewDidLoad];
+     UITapGestureRecognizer *tapRecognizer = [[UITapGestureRecognizer alloc]
+          initWithTarget:self action:@selector(respondToTapGesture:)];
+     tapRecognizer.numberOfTapsRequired = 1;
+     [self.view addGestureRecognizer:tapRecognizer];
+     // Do any additional setup after loading the view, typically from a nib
+}
+```
+
+### Responding to Discrete Gestures ###
+
+
+### Responding to Continuous Gestures ###
 
 ## Defining How Gesture Recognizers Interact ##
 

@@ -55,7 +55,7 @@ AFNetworking 既支持传统的 HTTP 请求，也支持 JSON, XML, plist 等结�
 
 First you need the base URL of the test script. Add this to the top of _WTTableViewController.m_, just underneath all the #import lines.
 
-    static [NSString][15] * const BaseURLString = @"http://www.raywenderlich.com/demos/weather_sample/";
+    static NSString * const BaseURLString = @"http://www.raywenderlich.com/demos/weather_sample/";
 
 This is the URL to an incredibly simple "web service" that I created for you for this tutorial. If you're curious what it looks like, you can [download the source][16].
 
