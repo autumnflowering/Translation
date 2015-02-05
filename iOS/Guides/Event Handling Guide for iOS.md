@@ -199,11 +199,50 @@ Use the UIGestureRecognizer class methods, delegate methods, and methods overrid
 
 #### Preventing Gesture Recognizers from Analyzing Touches ####
 
+可为 gesture recognizer 指定一个 delegate 对象以修改其行为。`UIGestureRecognizerDelegate` 协议提供了一组阻止 gesture recognizer 分析触摸事件的方法：
+
+``` Swift
+optional func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceiveTouch touch: UITouch) -> Bool
+optional func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool
+```
+
+若能在触摸开始时立即决定 gesture recognizer 是否应接收触摸事件，请使用 `gestureRecognizer:shouldReceiveTouch:` 方法。该方法在每次有新的触摸事件时调用，默认返回 YES. 该方法不会修改 gesture recognizer 的状态。
+
+若要尽量推迟决定 gesture recognizer 是否应分析触摸，请使用 `gestureRecognizerShouldBegin:` 方法。使用该方法的常见情形是，自定义的 UIView/UIControl 子类带有自定义的触摸事件处理逻辑，并与 gesture recognizer 产生了竞争。返回 NO 会使 gesture recognizer 立即 Fail, 这样就可以使其他触摸处理逻辑有机会执行了。This method is called when a gesture recognizer attempts to transition out of the Possible state, if the gesture recognition would prevent a view or control from receiving a touch.
+
+You can use the `gestureRecognizerShouldBegin:` UIView method if your view or view controller cannot be the gesture recognizer’s delegate. The method signature and implementation is the same.
+
 #### Permitting Simultaneous Gesture Recognition ####
+
+默认情况下，两个 gesture recognizer 不能同时识别（各自的）手势。但假设希望用户能同时 pinch 及 rotate 一个图片呢？这需要通过实现 `UIGestureRecognizerDelegate` 协议中的以下方法来更改这个默认行为：
+
+``` Swift
+optional func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWithGestureRecognizer otherGestureRecognizer: UIGestureRecognizer) -> Bool
+```
+
+该方法在一个 gesture recognizer 对手势的分析会阻塞 (block) 另一个 gesture recognizer 的分析 时调用，反之亦然（即二者有交集，会同时分析一个手势）。默认返回值为 NO.
+
+Note: You need to implement a delegate and return YES on only one of your gesture recognizers to allow simultaneous recognition. However, that also means that returning NO doesn’t necessarily prevent simultaneous recognition because the other gesture recognizer's delegate could return YES.
 
 #### Specifying a One-Way Relationship Between Two Gesture Recognizers ####
 
+如欲控制两个 recognizers 如何交互、又想仅指定一个单向的关系，可 override UIGestureRecognizer 的子类方法 `canPreventGestureRecognizer:` 或 `canBePreventedByGestureRecognizer:` 使之返回 NO（默认返回 YES）。如欲使 rotation 手势阻止 pinch 手势，但不想让 pinch 手势阻止 rotation 手势，可指定：
+
+`[rotationGestureRecognizer canPreventGestureRecognizer:pinchGestureRecognizer];`
+
+并 override rotation gesture recognizer 的子类方法使之返回 NO.
+
+若不允许两个手势互相阻止，请使用 `gestureRecognizer:shouldRecognizeSimultaneouslyWithGestureRecognizer:` 方法。默认情况下，pinch 手势和 rotation 手势是相互阻止的，因为二者不能同时被识别。
+
 ### Interacting with Other UI Controls ###
+
+In iOS 6.0 and later, default control actions prevent overlapping gesture recognizer behavior. For example, the default action for a button is a single tap. If you have a single tap gesture recognizer attached to a button’s parent view, and the user taps the button, then the button’s action method receives the touch event instead of the gesture recognizer. This applies only to gesture recognition that overlaps the default action for a control, which includes:
+
+- A single finger single tap on a UIButton, UISwitch, UIStepper, UISegmentedControl, and UIPageControl.
+- A single finger swipe on the knob of a UISlider, in a direction parallel to the slider.
+- A single finger pan gesture on the knob of a UISwitch, in a direction parallel to the switch.
+
+If you have a custom subclass of one of these controls and you want to change the default action, attach a gesture recognizer directly to the control instead of to the parent view. Then, the gesture recognizer receives the touch event first. As always, be sure to read the iOS Human Interface Guidelines to ensure that your app offers an intuitive user experience, especially when overriding the default behavior of a standard control.
 
 ## Gesture Recognizers Interpret Raw Touch Events ##
 
