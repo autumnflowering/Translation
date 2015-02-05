@@ -115,10 +115,95 @@ Discrete and continuous gestures:
 
 ### Responding to Discrete Gestures ###
 
+``` Objective-C
+- (IBAction)showGestureForTapRecognizer:(UITapGestureRecognizer *)recognizer {       
+      CGPoint location = [recognizer locationInView:self.view];       
+      [self drawImageForGestureRecognizer:recognizer atPoint:location];
+        // Animate the image view so that it fades out
+      [UIView animateWithDuration:0.5 animations:^{ self.imageView.alpha = 0.0; }];
+}
+```
+
+每种 gesture recognizer 都带有关于特定手势的信息，可充分利用这些信息作出特定的响应。
 
 ### Responding to Continuous Gestures ###
 
+连续手势允许程序在手势发生的同时作出响应，如 pinching 手势操作缩放。
+
+``` Objective-C 
+// Respond to a rotation gesture
+- (IBAction)showGestureForRotationRecognizer:(UIRotationGestureRecognizer *)recognizer {          
+       self.imageView.transform = CGAffineTransformMakeRotation([recognizer rotation]); 
+       // Display an image view at that location
+       [self drawImageForGestureRecognizer:recognizer atPoint:[recognizer locationInView:self.view]]; 
+      // If the gesture has ended or is canceled, begin the animation
+      // back to horizontal and fade out
+      if (([recognizer state] == UIGestureRecognizerStateEnded) || ([recognizer state] == UIGestureRecognizerStateCancelled)) {
+           [UIView animateWithDuration:0.5 animations:^{
+                self.imageView.alpha = 0.0;
+                self.imageView.transform = CGAffineTransformIdentity;
+           }];
+      } 
+}
+```
+
 ## Defining How Gesture Recognizers Interact ##
+
+Oftentimes, as you add gesture recognizers to your app, you need to be specific about how you want the recognizers to interact with each other or any other touch-event handling code in your app. To do this, you first need to understand a little more about how gesture recognizers work.
+
+### Gesture Recognizers Operate in a Finite State Machine ###
+
+Gesture recognizer 发一种预定义的方式从一种状态过渡到另一种状态。在各个状态下，它们根据是否满足某些条件而变到下一个状态。确切的状态机因 gesture recognizer 的离散或连贯而异，如下图所示。所有的 gesture recognizer 都从 Possible 状态开始 (UIGestureRecognizerStatePossible), 它们分析收到的多点触摸序列 (multitouch sequences), 分析结果要么是识别出手势、要么是未识别出，后一种情况将使之过渡到 Failed 状态 (UIGestureRecognizerStateFailed).
+
+![State machines for gesture recognizers](images/state_machines_for_gesture_recognizers.png)
+
+离散：识别出手势后就结束。
+连贯：手势发生时不断地从 Changed -> Changed. 用户的最后一个手指离开 view 时，过渡到 UIGestureRecognizerStateEnded 状态（与 Recognized 状态同义）。
+
+A recognizer for a continuous gesture can also transition from Changed to Canceled (UIGestureRecognizerStateCancelled) if it decides that the gesture no longer fits the expected pattern.
+
+状态改变时，gesture recognizer 会向其 target 发送一个 action 消息——除非它过渡到 Failed 或 Canceled 状态。如此一来，离散 gesture recognizer 从 Possible 到 Recognized 状态时只发送一个 action 消息，而连贯 gesture recognizer  则会发送许多。
+
+到 Recognized (或者说 Ended) 状态后，gesture recognizer 会把状态重置为 Possible ——这个状态转变不会触发 action 消息。	
+
+### Interacting with Other Gesture Recognizers ###
+
+一个 view 可附加多个 gesture recognizers, 可通过 `UIView.gestureRecognizers` 属性访问。可调用 `addGestureRecognizer:` and `removeGestureRecognizer:` 方法增删，这样就动态地改变了 view 对手势的响应方式。
+
+View 附加了多个 gesture recognizers 时，它们在接收及分析触摸事件时就可能产生竞争。默认情况下，没有规定哪个 gesture recognizer 先收到触摸事件，故每次的顺序都可能不一样。You can override this default behavior to:
+
+- 指定一个 gesture recognizer 应先于另一个分析触摸事件。
+- 允许两个 gesture recognizer 同时运作。
+- 阻止一个 gesture recognizer 分析某个触摸事件。
+
+Use the UIGestureRecognizer class methods, delegate methods, and methods overridden by subclasses to effect these behaviors.
+
+#### Declaring a Specific Order for Two Gesture Recognizers ####
+
+假如既要识别 swipe 手势（一个离散手势），又要识别 pan 手势（一个连续手势），且希望它们触发不同的行为。默认情况下，用户尝试 swipe 手势时，却会被识别成 pan. 这是因为 swipe 手势在满足被解释为 swipe 的必要条件之前，就满足了被解释为 pan 手势的必要条件。
+
+欲使 view 能同时识别 swipe 和 pan, 就需要让 swipe gesture recognizer 先分析触摸事件。若它判断出是一个 swipe 手势，那 pan gesture recognizer 就无须再分析了； 否则 swipe gesture recognizer 过渡到 Failed 状态，然后让 pan gesture recognizer 接着分析。要在两种 gesture recognizers 之间表示这种关系，请调用欲推迟的 gesture recognizer 的 `requireGestureRecognizerToFail:` 方法，如： 
+
+`[self.panRecognizer requireGestureRecognizerToFail:self.swipeRecognizer];` 
+
+即 swipeRecognizer Fail 之后，panRecognizer 才能开始。在等待 swipeRecognizer 变成 Fail 状态的过程中，panRecognizer 会保持 Possible 状态。接下来：
+
+- 若 swipeRecognizer 变成了 Fail 状态，则 panRecognizer 开始分析触摸事件。
+- 若 swipeRecognizer 变成了 Recognized 或 Began 状态，则 panRecognizer 过渡到 Failed 状态。
+
+> Note: If your app recognizes both single and double taps and your single tap gesture recognizer does not require the double tap recognizer to fail, then you should expect to receive single tap actions before double tap actions, even when the user double taps. This behavior is intentional because the best user experience generally enables multiple types of actions.
+
+注意：若同时识别单击和双击，且单击 recognizer 不需要双击 recognizer Fail, 那么你可能希望先收到单击行为，即使用户双击操作时。这一行为是故意的 (intentional), 因为最好的用户体验通常都允许多种行为。
+
+若希望单击和双击是互斥的，那么单击 recognizer 必须要求双击 recognizer Fail. 但这样单击行为可能有些许卡顿，因为单击 recognizer 被推迟了——直到双击 recognizer Fail.
+
+#### Preventing Gesture Recognizers from Analyzing Touches ####
+
+#### Permitting Simultaneous Gesture Recognition ####
+
+#### Specifying a One-Way Relationship Between Two Gesture Recognizers ####
+
+### Interacting with Other UI Controls ###
 
 ## Gesture Recognizers Interpret Raw Touch Events ##
 
