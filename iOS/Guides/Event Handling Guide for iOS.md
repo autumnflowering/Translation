@@ -340,9 +340,47 @@ iOS 使用 hit-testing 寻找被触摸的 view, 这涉及判断触摸是否在�
 1. The touch is not within the bounds of view D, but it’s within the bounds of view E.
 1. View E is the lowest view in the view hierarchy that contains the touch, so it becomes the hit-test view.
 
+func hitTest(_ point: CGPoint, withEvent event: UIEvent?) -> UIView?
+func pointInside(_ point: CGPoint, withEvent event: UIEvent?) -> Bool
+
+The `hitTest:withEvent:` method returns the hit test view for a given CGPoint and UIEvent. The hitTest:withEvent: method begins by calling the pointInside:withEvent: method on itself. If the point passed into hitTest:withEvent: is inside the bounds of the view, pointInside:withEvent: returns YES. Then, the method recursively calls hitTest:withEvent: on every subview that returns YES.
+
+If the point passed into hitTest:withEvent: is not inside the bounds of the view, the first call to the pointInside:withEvent: method returns NO, the point is ignored, and hitTest:withEvent: returns nil. If a subview returns NO, that whole branch of the view hierarchy is ignored, because if the touch did not occur in that subview, it also did not occur in any of that subview’s subviews. This means that any point in a subview that is outside of its superview can’t receive touch events because the touch point has to be within the bounds of the superview and the subview. This can occur if the subview’s clipsToBounds property is set to NO.
+
+Note: A touch object is associated with its hit-test view for its lifetime, even if the touch later moves outside the view.
+
+The hit-test view is given the first opportunity to handle a touch event. If the hit-test view cannot handle an event, the event travels up that view’s chain of responders as described in The Responder Chain Is Made Up of Responder Objects until the system finds an object that can handle it.
+
 ## The Responder Chain Is Made Up of Responder Objects ##
 
+许多种事件的分发都依赖于 responder chain, 后者是一系列链接起来的 responder 对象，始于 first responder, 终于 Application 对象。若 first responder 无法处理事件，则它把事件转发给 responder chain 中的下一个 responder.
+
+Responder 对象可以响应并处理事件，基类为 `UIResponder`. `UIResponder` 类为事件处理和通用的 responder 行为定义了编程接口。UIApplication, UIViewController, and UIView 类的实例都是 responder, 这意味着所有的 view 和大多数的 key controller 对象都是 responder. 注意 Core Animation layers 不是 responders.
+
+Fiesr responder 被指定为首先接收事件，它通常是一个 view 对象。某个对象可通过以下两步成为 first responder:
+
+1. Override `canBecomeFirstResponder` 方法以返回 YES.
+1. 接收一个 `becomeFirstResponder` 消息。必要时可以向自己发送此消息。
+
+注意：把某个对象指派为 first responder 前，要确保程序已建立了自己的 object graph. 如，通常在 `viewDidAppear:` 方法中调用 `becomeFirstResponder` 方法；若尝试在 `viewWillAppear:` 方法中指派 first responder, 由于 object graph 尚未建立，故 `becomeFirstResponder` 方法会返回 NO.
+
+并非只有事件才依赖于 responder chain, 以下场景也会用到 responder chain:
+
+- 触摸事件。若 hit-test view 不能处理某个触摸事件，则该事件会沿着一个从 hit-test view 开始的 responder chain 向上传递。
+- 运动事件。要用 UIKit 处理 shake-motion 事件，first responder 必须实现 UIResponder 类中的 `motionBegan:withEvent:` 或 `motionEnded:withEvent:` 方法。
+- 远程控制事件。要处理远程控制事件，first responder 必须实现 UIResponder 类中的 `remoteControlReceivedWithEvent:` 方法。
+- Action 消息。用户操纵控件时，若 action method 的 target 是 nil, 则消息会沿着一个从控件开始的 responder chain 传递。
+- 编辑菜单消息。用户点击编辑菜单命令时，iOS 使用一个 responder chain 寻找实现了必要方法（如 cut:, copy:, 及 paste:）的对象。
+- 文本编辑。用户点击 text field 或 text view 时，那个 viw 会自动成为 first responder. 默认地，虚拟键盘会出现，text field 或 text view 成为编辑焦点。当然你也可以显示一个自定义的 view 面不是键盘，还可以为任何 responder 对象显示自定义的 input view.
+
+UIKit 会自动把用户点击的 text field 或 text view 设置为 first responder, 而对其他类型的 responder, 必须显式调用 `becomeFirstResponder` 才能使之成为 first responder.
+
 ## The Responder Chain Follows a Specific Delivery Path ##
+
+若 initial object ——hist-test view 或 first responder ——未处理事件，则 UIKit 把事件传递给 responder chain 中的下一个 responder. 每个 responder 决定是处理该事件，还是调用 `nextResponder` 方法把事件传递给下一个 responder. 这一过程一直持续到某个 responder 处理该事件，或不再有 responder 对象。
+
+The responder chain sequence begins when iOS detects an event and passes it to an initial object, which is typically a view. The initial view has the first opportunity to handle an event. Figure 2-2 shows two different event delivery paths for two app configurations. An app’s event delivery path depends on its specific construction, but all event delivery paths adhere to the same heuristics.
+
 
 # Multitouch Events #
 
