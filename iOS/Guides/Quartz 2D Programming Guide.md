@@ -3,7 +3,7 @@ Apple Official Documentation
 
 # Introduction #
 
-Quartz 2D 是一个高级、轻量的二维绘图引擎。它不依赖于分辨率或设备。Quartz 2D 会尽量地使用图形硬件的性能。
+Quartz 2D 是一个高级 advanced 、轻量的二维绘图引擎。它不依赖于分辨率或设备。Quartz 2D 会尽量地使用图形硬件的性能。
 
 Quartz 2D API 易于使用，提供了对透明图层、基于路径的绘图、offscreen rendering、高级色彩管理、抗锯齿、PDF 文档处理等强大功能。
 
@@ -67,7 +67,7 @@ Quartz 根据当前 graphics state 中的参数 (parameters) 修改绘图操作�
 
 The graphics context contains a stack of graphics states. Quartz 创建一个 graphics context 时，该栈是空的；当你保存 graphics state 时 (CGContextSaveGState())，Quartz 把当前 graphics state 的一个副本推入栈；当你恢复 graphics state 时 (CGContextRestoreGState())，Quartz 把 graphics state 从栈顶弹出，当前的 graphics state 被弹出的 graphics state 替代。
 
-不是当前绘图环境的所有方面都属于 graphics state, 如当前路径就不是 graphics state 的一部分，因此调用 CGContextSaveGState() 函数时也不会被保存进去。保存的 graphics state 参数包括：
+不是当前绘图环境的所有方面都属于 graphics state, 如当前路径，因此调用 CGContextSaveGState() 函数时也不会被保存进去。保存的 graphics state 参数包括：
 
 - Current transformation matrix (CTM)
 - Clipping area
@@ -83,7 +83,7 @@ The graphics context contains a stack of graphics states. Quartz 创建一个 gr
 
 ## Quartz 2D Coordinate Systems ##
 
-在用户空间的坐标系统中指定图形的位置和大小。由于不同的设备有不同的底层成像能力（如分辨率不同），图形的位置和大小必须以设备无关的方式定义。
+图形的位置和大小由用户空间的坐标系统指定。由于不同的设备有不同的底层成像能力（如分辨率不同），图形的位置和大小必须以设备无关的方式定义。
 
 Quartz 通过一个独立的坐标系统——用户空间坐标系统——实现设备的独立性。用户空间坐标系统通过 CTM (current transformation matrix) 被映射到输出设备——设备空间坐标系统。矩阵是一个数学概念，用以高效地描述一系列相关的等式。CTM 是一种谓之 affine transform 的特殊矩阵，通过 translation, rotation, and scaling 操作把一个坐标空间中的点映射到另一个坐标空间，这些操作分别对应于坐标系统的 move, rotate and resize 计算。
 
@@ -119,13 +119,13 @@ A graphics context represents a drawing destination. 它包含绘图系统所需
 
 You can obtain a graphics context by using Quartz context creation functions or by using higher-level functions provided by one of the Mac OS X frameworks or the UIKit framework in iOS.
 
-## Drawing to a View Graphics Context is iOS ##
+## Drawing to a View Graphics Context in iOS ##
 
 在 iOS 程序中向屏幕绘图，设定一个 UIView 对象并实现其 drawRect: 方法来执行绘图。View 的 drawRect: 方法在 view 显现在屏幕上或其内容需要更新时调用。调用该方法之前，view 对象会自动配置好其绘图环境，该配置的一部分就是为当前绘图环境创建一个 graphics context, 可在 drawRect: 方法内调用 CGContextRef context = UIGraphicsGetCurrentContext(); 函数以获得之。
 
 UIkit 所用的默认坐标系统与 Quartz 的坐标系统不同，前者的原点在左上角。
 
-## Creating a Window Graphis Context is OS X ##
+## Creating a Window Graphis Context in OS X ##
 
 在 OS X 中绘图时，需要根据所用的 framework 创建一个适当的 window graphics context. Quartz 2D API 自身未提供获得 window graphics context 的功能。Instead, you use the Cocoa framework to obtain a context for a window created in Cocoa.
 
@@ -323,18 +323,20 @@ TBC...
 
 ## Cliping to a Path ##
 
+clipping area 裁剪区域
+
 The current clipping area is created from a path that serves as a mask, allowing you to block out the part of the page that you don’t want to paint. For example, if you have a very large bitmap image and want to show only a small portion of it, you could set the clipping area to display only the portion you want to show.
 
-When you paint, Quartz renders paint only within the clipping area. Drawing that occurs inside the closed subpaths of the clipping area is visible; drawing that occurs outside the closed subpaths of the clipping area is not.
+Quartz 仅渲染裁剪区域内的绘图部分，其外的部分是不可见的。Inside/ouside the closed subpaths of the cliping area.
 
-When the graphics context is initially created, the clipping area includes all of the paintable area of the context (for example, the media box of a PDF context). You alter the clipping area by setting the current path and then using a clipping function instead of a drawing function. The clipping function intersects the filled area of the current path with the existing clipping area. Thus, you can intersect the clipping area, shrinking the visible area of the picture, but you cannot increase the area of the clipping area.
+Graphics context 刚创建时，裁剪区域包括 context 内的所有可绘图区域。要修改裁剪区域，请设置当前路径，然后调用裁剪函数（而不是绘图函数）。The clipping function intersects the filled area of the current path with the existing clipping area. Thus, you can intersect the clipping area, shrinking the visible area of the picture, but you cannot increase the area of the clipping area.
 
-The clipping area is part of the graphics state. To restore the clipping area to a previous state, you can save the graphics state before you clip, and restore the graphics state after you’re done with clipped drawing.
+裁剪区域是 graphics state 的一部分，保存 -> 修改 -> 恢复。
 
-Listing 3-1 shows a code fragment that sets up a clipping area in the shape of a circle. This code causes drawing to be clipped, similar to what’s shown in Figure 3-3. (For another example, see Clip the Context in the chapter Gradients.)
+以下代码建立一个圆形的裁剪区域：
 
     CGContextBeginPath (context);
-    CGContextAddArc (context, w/2, h/2, ((w>h) ? h : w)/2, 0, 2*PI, 0);
+    CGContextAddArc (context, w/2, h/2, ((w > h) ? h : w)/2, 0, 2*PI, 0);
     CGContextClosePath (context);
     CGContextClip (context);
 
@@ -378,17 +380,15 @@ Quartz 2D 绘图模型定义了两个完全独立的坐标空间：
 
 ## About Quartz Transformation Functions ##
 
-使用 Quartz 2D 内置的变换函数，可轻松地 translate, scale 及 rotate 绘图。每个变换都会更新 CTM. CTM 总是表示用户空间到设备空间的当前映射，此映射保证了程序在任何显示器或打印机上的输出都完好。
+使用 Quartz 2D 内置的变换函数，可轻松地 translate, scale 及 rotate 绘图。每个变换都会更新 CTM. CTM 总是表示用户空间到设备空间的当前映射，此映射保证了程序在任何显示器或打印机上的输出都很好。
 
-The Quartz 2D API provides five functions that allow you to obtain and modify the CTM. You can rotate, translate, and scale the CTM, and you can concatenate an affine transformation matrix with the CTM. See Modifying the Current Transformation Matrix.
+Quartz 2D API 提供了 5 个函数以获得和修改 CTM. You can rotate, translate, and scale the CTM, 也可把仿射变换矩阵串接到 CTM. 请参阅 Modifying the CTM.
 
-Quartz also allows you to create affine transforms that don’t operate on user space until you decide to apply the transform to the CTM. You use another set of functions to create affine transforms, which can then be concatenated with the CTM. See Creating Affine Transforms.
-
-You can use either set of functions without understanding anything about matrix math. However if you want to understand what Quartz does when you call one of the transform functions, read The Math Behind the Matrices.
+Quartz 也允许创建仿射变换，仿射变换不操作在用户空间上——直到将其应用于 CTM. 创建仿射变换使用的是另外一族函数，请参阅 Creating Affine Transforms.
 
 ## Modifying the CTM ##
 
-绘图前操纵 CTM 以旋转、缩放或平移 page, 这样会变换将要绘制的对象。变换 CTM 前最好保存 graphics state, 这样绘制完成后可将其恢复。也可把 CTM 与仿射变换拼接 (concatenate) 起来。
+绘图前操纵 CTM 以旋转、缩放或平移 page, 这样会变换将要绘制的对象。变换 CTM 前最好保存 graphics state, 这样绘制完成后可将其恢复。
 
 **执行多个变换时，不同的变换顺序可能导致不同的变换结果。**
 
@@ -408,29 +408,502 @@ Concatenation combines two matrices by multiplying them together. You can concat
 
     void CGContextConcatCTM(CGContextRef c, CGAffineTransform transform);
 
-Another way to achieve a cumulative effect is to perform two or more transformations without restoring the graphics state between transformation calls.
+实现累积变换效果的另一种方式是执行多个变换而不恢复 graphics state.
 
 ## Creating Affine Transforms ##
 
-Quartz 中的仿射变换函数操作的是 matrices, 而不是 CTM. 用这些函数构建一个 matrix, 然后调用 CGContextConcatCTM 函数将其应用到 CTM. 
+Quartz 中的仿射变换函数操作的是（普通意义上的）矩阵，而不是 CTM, 它们抑或操作、抑或返回一个 `CGAffineTransform` 数据结构。用这些函数构建矩阵，然后调用 `CGContextConcatCTM` 函数将其应用到 CTM.
+
+仿射变换函数执行的操作与 CTM 函数相同：平移、旋转、缩放等。以下列出了这些函数，注意每个操作都有两个函数：
+
+- CGAffineTransformMakeTranslation To construct a new translation matrix from x and y values that specify how much to move the origin.- CGAffineTransformTranslate To apply a translation operation to an existing affine transform.- CGAffineTransformMakeRotation To construct a new rotation matrix from a value that specifies in radians how much to rotate the coordinate system.- CGAffineTransformRotate To apply a rotation operation to an existing affine transform.- CGAffineTransformMakeScale To construct a new scaling matrix from x and y values that specify how much to stretch or shrink coordinates.- CGAffineTransformScale To apply a scaling operation to an existing affine transform.
+
+Quartz also provides an affine transform function that **inverts** a matrix, `CGAffineTransformInvert`. Inversion is generally used to provide reverse transformation of points within transformed objects. Inversion can be useful when you need to recover a value that has been transformed by a matrix: Invert the matrix, and multiply the value by the inverted matrix, and the result is the original value. You usually don't need to invert transforms because you can reverse the effects of transforming the CTM by saving and restoring the graphics state.
+
+In some situations you might not want to transform the entire space, but just a point or a size:
+
+- 调用 `CGPointApplyAffineTransform` 函数以操作 CGPoint 结构体。
+- 调用 `CGSizeApplyAffineTransform` 函数以操作 CGSize 结构体。
+- 调用 `CGRectApplyAffineTransform` 函数以只剩 CGRect 结构体。This function returns the smallest rectangle that contains the transformed corner points of the rectangle passed to it. If the affine transform that operates on the rectangle performs only scaling and translation operations, the returned rectangle coincides with the rectangle constructed from the 4 transformed corners.
+可调用 `CGAffineTransformMake` 以创建一个新的仿射变换，但与其他创建（特定的）仿射变换的函数不同，该函数要求你提供变换矩阵。要有效地使用此函数，需理解底层的数学知识，请参阅 The Math behind the Matrices.
 
 ## Evaluating Affine Transforms ##
 
+`CGAffineTransformEqualToTransform` 函数判断两个仿射变换是否相等。
+
+`CGAffineTransformIsIdentity` 函数判断某个变换是否是恒等变换。恒等变换不执行任何变换。Quartz 常量 `CGAffineTransformIdentity` 表示恒等变换。
+
 ## Getting the User to Device Space Transform ##
+
+使用 Quartz 2D 时通常只需在用户空间工作，它自会打理好用户空间与设备空间的映射。若要获得 Quartz 用以在用户空间和设备空间之间转换的那个仿射变换，可调用 `CGContextGetUserSpaceToDeviceSpaceTransform` 函数。
+
+Quartz 提供了一些便利的函数以在用户空间和设备空间之间转换以下几何形状，你会发现这些函数比应用 `CGContextGetUserSpaceToDeviceSpaceTransform` 返回的仿射变换更容易：
+- 点。`CGContextConvertPointToDeviceSpace` 和 `CGContextConvertPointToUserSpace` 函数把 CGPoint 类型从一个空间转换到另一个空间。- 尺寸。`CGContextConvertSizeToDeviceSpace` 和 `CGContextConvertSizeToUserSpace` 函数把 CGSize 类型从一个空间转换到另一个空间。- 矩形。`CGContextConvertRectToDeviceSpace` 和 `CGContextConvertRectToUserSpace` 函数把 CGRect 类型从一个空间转换到另一个空间。
 
 ## The Math behind the Matrices ##
 
+唯一需要理解矩阵的 Quartz 2D 函数是
+
+``` C
+CGAffineTransform CGAffineTransformMake (
+   CGFloat a, CGFloat b,
+   CGFloat c, CGFloat d,
+   CGFloat tx, CGFloat ty
+);
+```
+
+其参数是一个 3 阶方阵：
+
+    [ a  b  0 ]
+    [ c  d  0 ]
+    [ tx ty 1 ]
+
+第 3 列恒为常数，其作用是使矩阵满足相乘的条件。
+
+一个点 (x, y) 根据此矩阵变换后的点 (x', y') 的计算公式是矩阵相乘：
+
+```
+                                   [ a  b  0 ]
+   [x', y', 1] = [x, y, 1] x [ c  d  0 ]
+                                   [ tx ty 1 ]
+   i.e., x' = ax + cy + tx, y' = bx + dy + ty
+```
+
+平移变换对应的矩阵是：
+
+    [ 1  0  0 ]
+    [ 0  1  0 ]
+    [ tx ty 1 ]
+
+缩放变换对应的矩阵是：
+
+    [ sx 0  0 ]
+    [ 0  sy 0 ]
+    [ 0  0  1 ]
+
+旋转变换对应的矩阵是（逆时针旋转 a 弧度）：
+
+    [ cosa  sina  0 ]
+    [ -sina  cosa 0 ]
+    [ 0        0      1 ]
+
+两个变换串接时，将其相应的矩阵相乘。由于矩阵乘法是不可交换的，故串接的顺序影响着最终的结果。
+
+矩阵乘以其逆阵，得到的就是单位阵，即恒等变换。
+
 # Patterns #
+
+TBC...
 
 # Shadows #
 
+阴影是一个绘制在图形对象下方、并有一定偏移的图像，这样就模仿了光源照在图形对象上的效果。阴影可使图形看起来更有立体感，或像是飘浮着一样。
+
+阴影有 3 个特征：
+
+- 一个 x 偏移，指定阴影在水平方向上的偏移；
+- 一个 y 偏移，指定阴影在垂直方向上的偏移；
+- 一个模糊值，指定阴影的边缘是 hard 还是 diffuse.
+
+## How Shadows Work ##
+
+阴影是 graphics state 的一部分。
+
+调用 `void CGContextSetShadow(CGContextRef context, CGSize offset, CGFloat blur);` 函数以设置阴影，此后绘制的所有对象都会带有一个用设备 RGB 色彩空间的 1/3 alpha 的黑色阴影，即阴影的 RGBA 值为 { 0, 0, 0, 1.0/3.0 }.
+
+调用 `void CGContextSetShadowWithColor(CGContextRef context, CGSize offset, CGFloat blur, CGColorRef color);` 函数以设置阴影色彩。
+
+要禁用阴影，既可使用 graphics state 标准的保存/恢复机制，也可调用 `CGContextSetShadowWithColor` 函数把阴影色彩参数设为 NULL.
+## Shadow Drawing Conventions Vary Based on the Context ##
+
+上述的偏移用以指定阴影相对于图形的位置：
+
+- 正的 x 偏移表示阴影在图形对象右边。
+- 在 OS X 中，正的 y 偏移表示向上错位，这与 Quartz 2D 默认的坐标系统相符。- 在 iOS 中，若使用 Quartz 2D API 创建 PDF 或位图 context, 则正的 y 偏移表示向上错位。
+- 在 iOS 中，若 graphics context 是由 UIKit 创建的，如 UIView 对象创建的 graphics context 或调用 `UIGraphicsBeginImageContextWithOptions` 函数创建的 graphics context, 则正的 y 偏移表示向下错位。这与 UIKit 坐标系统的绘图约定相符。- 阴影绘图约定不受 CTM 影响。The shadow-drawing convention is not affected by the current transformation matrix.
+
+## Painting with Shadows ##
+
+使用阴影绘图请遵循以下步骤：
+
+1. 保存 graphics state.
+1. 调用 `void CGContextSetShadow(CGContextRef context, CGSize offset, CGFloat blur);` 函数。
+1. 绘制欲使用阴影的图形。
+1. 恢复 graphics state.
+
+使用彩色阴影绘图请遵循以下步骤：
+
+1. 保存 graphics state.
+1. 创建一个 `CGColorSpace` 对象以确保 Quartz 正确地解析阴影色彩值。
+1. 创建一个 `CGColor` 对象指定阴影色彩。
+1. 调用 `void CGContextSetShadowWithColor(CGContextRef context, CGSize offset, CGFloat blur, CGColorRef color);` 函数。
+1. 绘制欲使用阴影的图形。
+1. 恢复 graphics state.
+
 # Gradients #
+
+Quartz 提供了两个不透明的数据类型来创建渐变——`CGShadingRef` 和 `CGGradientRef`. 可使用任一来创建轴向渐变（亦曰线性渐变）或径向渐变。
+
+渐变不仅可以改变颜色，还可改变其 alpha 值。注意若使用 alpha 值渐变，则绘制到 PDF content 时无法捕获 (capture) 该渐变。由于这一点，这样的渐变也无法打印。若要把渐变绘制到 PDF, 请将 alpha 值设为 1.0.
+
+轴向渐变不仅可指定两个端点的颜色，还可指定轴上某个位置的颜色。
+
+若径向渐变的一个圆全部或部分位于另一个圆之外：
+
+- 若两个圆半径相等，则径向渐变的效果是一个圆柱；
+- 若两个圆半径不等，则么向渐变的效果是一个圆锥。
+
+若径向渐变的一个圆的半径为 0 且位于另一个圆之内，则径向渐变的效果是一个发光的球体。
+
+同心圆径向渐变还可创造更复杂的效果。
+
+## A Comparison of CGShading and CGGradient Objects ##
+
+`CGShadingRef` 可让你通过一个 `CGFunctionRef` 对象自由地控制渐变中每个点的颜色。调用 `CGContextDrawShading` 绘制渐变。
+
+CGGradient 是 CGShading 的子集，设计思想是易用。只需提供一个数组，指定一些位置及该位置上的颜色，Quartz 会计算剩余连续位置上的颜色。CGShading 只能指定两个位置，而 CGGradient 可指定多个位置，这是其一个优势。
+
+CGShading vs. CGGradient:
+
+CGGradient                                                 CGShading
+可使用同一个对象绘制轴向和径向渐变。   需创建独立的对象绘制轴向和径向渐变。
+在绘制时指定渐变的几何位置。                  在对象创建时指定渐变的几何位置。
+Quartz 计算渐变中每个点的颜色。             你必须提供一个回调函数以计算渐变中每个点的颜色。
+易于定义多于两个位置和颜色。                  Need to design your callback to use more than two locations and colors, so it takes a bit more work on your part.
+
+## Extending Color Beyond the End of a Gradient ##
+
+solid color 纯色
+
+可用纯色填充渐变起点和/或终点之外的空间，所用的填充色是渐变边界处的颜色。CGShading 和 CGGradient 创建的轴向和径向渐变都支持这样填充。
+
+传递给 `CGContextDrawLinearGradient` 或 `CGContextDrawRadialGradient` 的最后一个参数，如 `kCGGradientDrawsAfterEndLocation`.
+
+## Using a CGGradient Object ##
+
+CGGradient 是对渐变的一个抽象定义——它简单地定义了颜色和位置，而未定义几何。
+
+- 由于是抽象的定义，故比 CGShading 更适于复用。
+- 由于未定义几何，故可使用同一个 CGGradient 对象绘制颜色定义相同的渐变，从而节约内存。
+
+由于 Quartz 负责计算渐变色，故使用 CGGradient 绘制渐变很直观：
+
+1. 创建一个 CGGradient 对象，提供一个色彩空间、一个色彩成份数组、一个位置数组，以及两个数组各个的大小。
+1. 调用以下函数绘制渐变：
+
+``` C
+void CGContextDrawLinearGradient (
+   CGContextRef context, CGGradientRef gradient,
+   CGPoint startPoint, CGPoint endPoint,
+   CGGradientDrawingOptions options
+);
+void CGContextDrawRadialGradient (
+   CGContextRef context, CGGradientRef gradient,
+   CGPoint startCenter, CGFloat startRadius,
+   CGPoint endCenter, CGFloat endRadius,
+   CGGradientDrawingOptions options
+);
+```
+
+1. 不需要时释放 CGGradient 对象。
+
+CGGradient 位置的数据类型为 CGFloat, 取值范围为 [0.0, 1.0]. 0.0 表示轴的起点，1.0 表示轴的终点。至少需要两个位置，若为位置数组传递 NULL, 则两个位置的值默认为 0.0 和 1.0.
+
+CGGradientCreateWithColorComponents, CGGradientCreateWithColors
+
+In iOS, where generic RGB color spaces are not available, your code should call CGColorSpaceCreateDeviceRGB instead.
+
+## Using a CGShading Object ##
+
+``` C
+CGShadingRef CGShadingCreateAxial (
+   CGColorSpaceRef space,
+   CGPoint start, CGPoint end,
+   CGFunctionRef function,
+   bool extendStart, bool extendEnd
+);
+CGShadingRef CGShadingCreateRadial (
+   CGColorSpaceRef space,
+   CGPoint start, CGFloat startRadius,
+   CGPoint end, CGFloat endRadius,
+   CGFunctionRef function,
+   bool extendStart, bool extendEnd
+);
+```
+
+可调用以下函数创建 `CGFunctionRef`:
+
+``` C
+CGFunctionRef CGFunctionCreate (
+   void *info,
+   size_t domainDimension,
+   const CGFloat *domain,
+   size_t rangeDimension,
+   const CGFloat *range,
+   const CGFunctionCallbacks *callbacks
+);
+```
+
+TBC...
+
+### Painting an Axial Gradient Using a CGShading Object ###
+
+
+#### Set Up a CGFunction Object to Compute Color Values ####
+
+#### Create a CGShading Object for an Axial Gradient ####
+
+#### Clip the Context ####
+
+#### Paint the Axial Gradient Using a CGShading Object ####
+
+#### Release Objects ####
+
+#### A Complete Routine for an Axial Gradient Using a CGShading Object #### 
+
+### Painting a Radial Gradient Using a CGShading Object ###
+
+
+#### Set Up a CGFunction Object to Compute Color Values ####
+
+
+#### Create a CGShading Object for a Radial Gradient ####
+
+
+#### Paint a Radial Gradient Using a CGShading Object ####
+
+
+#### Release Objects ####
+
+
+#### A Complete Routine for Painting a Radial Gradient Using a CGShading Object ####
+
+
+## See Also ##
+
 
 # Transparency Layers #
 
+透明层包含两个或多个对象，它们组合起来形成一个合成的图形，后者被视为单个对象。要把某个效果应用在一组对象上时，透明层尤为有用。
+
+## How Transparency Layers Work ##
+
+Quartz 的透明层类似于许多流行的图形程序里的图层。图层是独立的实体。Quartz 为每个 graphics context 维护了一个透明层的栈，且透明层可以嵌套。由于图层总是栈的一部分，故无法独立地操纵它们。
+
+调用 `void CGContextBeginTransparencyLayer(CGContextRef context, CFDictionaryRef auxiliaryInfo);` 函数标示 (signal) 透明层的开始，auxiliaryInfo 参数现在未被 Quartz 2D API 使用，故调用时为该参数传递 NULL. 调用该函数后，除了以下参数，其他 graphics state 参数都保持不变：
+
+- alpha, 被置为 1.
+- 阴影，并关闭。
+- 混合模式，被置为正常。
+- 其他影响最终合成结果的参数也会被复位。After you begin a transparency layer, you perform whatever drawing you want to appear in that layer. Drawing operations in the specified context are drawn as a composite into a fully transparent backdrop. This backdrop is treated as a separate destination buffer from the context.
+绘图完毕后调用 `void CGContextEndTransparencyLayer(CGContextRef context);` 函数。Quartz 使用 graphics context 全局的 alpha 值和阴影状态把结果合成到 context, 并会把裁剪区域考虑进去。
+
+## Painting to a Transparency Layer ##
+
+在透明层中绘图需要 3 个步骤：
+
+1. 调用 `CGContextBeginTransparencyLayer` 函数；
+1. 绘制要在透明层中合成的内容；
+1. 调用 `CGContextEndTransparencyLayer` 函数。
+
 # Data Management in Quartz 2D #
 
+每个图形程序都要管理数据，对 Quartz 来说，数据管理指的是为 Quartz 2D 例程提供数据或从 Quartz 2D 例程接收数据。
+
+Quartz 提供了多种用于管理数据的函数，阅读本章后，你应能判断哪个函数最适合自己的程序。
+
+注意：读写图像数据的首选方式是使用 Image I/O framework, 在 iOS 4 和 OS X 10.4 及以后可用。请参阅 Image I/O Programming Guide, 该框架还对访问图像元数据提供了更好的支持。
+
+Quartz recognizes 3 broad categories of data sources and destinations:
+
+- URL. 位置可指定为 URL 的数据，既可作为数据的提供者，也可作为数据的接收者。传递给 Quartz 函数的 URL 数据类型是 CFURLRef.
+- CFData. The Core Foundation data types CFDataRef and CFMutableDataRef are data objects that let simple allocated buffers take on the behavior of **Core Foundation** objects. CFData is “toll-free bridged” with its **Cocoa Foundation** counterpart, the NSData class; if you are using Quartz 2D with the Cocoa framework, you can pass an NSData object to any Quartz function that takes a CFData object.
+- Raw data. You can provide a pointer to data of any type along with a set of callbacks that take care of basic memory management for the data.
+
+数据本身不管表示为 URL, CFData 对象，还是数据缓冲区，都可以是图像数据或 PDF 数据。图像数据可以是任何类型的文件格式，Quartz 可识别多数常见的图像文件格式。有些 Quartz 数据管理函数只处理特定的图像数据，有些只处理 PDF 数据，而其他一些则更通用，通吃 PDF 和图像数据。
+
+URL, CFData, and raw data sources and destinations 指的是 OS X 或 iOS 图形技术之外的数据，如下图所示。OS X 或 iOS 中的其他图形技术通常提供了自己的一些例程以与 Quartz 通信，如 OS X 程序可把 Quartz 图像发送给 Core Image 使之用复杂的效果修饰图像。
+
+![Moving data to and from Quartz 2D in Mac OS X](TBD)
+## Moving Data into Quartz 2D ##
+
+以下列出了从数据源获取数据的函数。除了 `CGPDFDocumentCreateWithURL` 之外的其他函数，要么返回 `CGImageSourceRef`, 要么返回 `CGDataProviderRef`. Image sources and data providers 对数据访问作了抽象，且使程序免于通过 raw memory buffer 管理数据。
+
+- CGImageSourceCreateWithDataProvider    To create an image source from a data provider.
+- CGImageSourceCreateWithData    To create an image source from a CFData object.
+- CGImageSourceCreateWithURL    To create an image source from a URL that specifies the location of image data.
+- CGPDFDocumentCreateWithURL    To create a PDF document from data that resides at the specified URL.
+- CGDataProviderCreateSequential    To read image or PDF data in a stream. You supply callbacks to handle the data.
+- CGDataProviderCreateDirectAccess    To read image or PDF data in a block. You supply callbacks to handle the data.
+- CGDataProviderCreateWithData    To read a buffer of image or PDF data supplied by your application. You provide a callback to release the memory you allocated for the data.
+- CGDataProviderCreateWithURL    Whenever you can supply a URL that specifies the target for data access to image or PDF data.
+- CGDataProviderCreateWithCFData    To read image or PDF data from a CFData object.
+
+Image source 是向 Quartz 移动图像数据的首选方式，可表示多种图像数据，可包含多于一个图像、缩略图、及每个图像和图像文件的属性。使用 `CGImageSourceRef` 可完成以下任务：
+
+- Create images (CGImageRef) using the functions `CGImageSourceCreateImageAtIndex`, `CGImageSourceCreateThumbnailAtIndex`, or `CGImageSourceCreateIncremental`. A `CGImageRef` data type represents a single Quartz image.
+- Add content to an image source using the functions `CGImageSourceUpdateData` or `CGImageSourceUpdateDataProvider`.
+- Obtain info from an image source using the functions `CGImageSourceGetCount` , `CGImageSourceCopyProperties`, and `CGImageSourceCopyTypeIdentifiers`.
+
+The function CGPDFDocumentCreateWithURL is a convenience function that creates a PDF document from the file located at the specified URL.
+
+Data provider 是一个较旧的机制，功能有限，可用于获得图像或 PDF 数据。You can supply a data provider to:
+
+- An image creation function, such as CGImageCreate, CGImageCreateWithPNGDataProvider, or CGImageCreateWithJPEGDataProvider.
+- The PDF document creation function CGPDFDocumentCreateWithProvider.
+- The function CGImageSourceUpdateDataProvider to update an existing image source with new data.
+
+## Moving Data out of Quartz 2D ##
+
+以下列出了从 Quartz 2D 移出数据的函数。除了 `CGPDFContextCreateWithURL` 之外的其他函数，要么返回 `CGImageDestinationRef`,  要么返回 `CGDataConsumerRef`. Image destination and data consumers 对写数据作了抽象，使 Quartz 为你处理其中的细节。
+
+- CGImageDestinationCreateWithDataConsumer    To write image data to a data consumer.
+- CGImageDestinationCreateWithData    To write image data to a CFData object.
+- CGImageDestinationCreateWithURL    Whenever you can supply a URL that specifies where to write the image data.
+- CGPDFContextCreateWithURL    Whenever you can supply a URL that specifies where to write PDF data.
+- CGDataConsumerCreateWithURL    Whenever you can supply a URL that specifies where to write the image or PDF data.
+- CGDataConsumerCreateWithCFData    To write image or PDF data to a CFData object.
+- CGDataConsumerCreate    To write image or PDF data using callbacks you supply.
+
+Image destination 是从 Quartz 移出图像数据的首选方式。与 image source 类似，image destination 也可表示多种图像数据：单个图像、多个图像、缩略图，以及每个图像和图像文件的属性。使用 `CGImageDestinationRef` 可完成以下任务：
+
+- Add images (CGImageRef) to a destination using the functions `CGImageDestinationAddImage` or `CGImageDestinationAddImageFromSource`. A `CGImageRef` data type represents a single Quartz image.- Set properties using the function `CGImageDestinationSetProperties`.
+- Obtain information from an image destination using the functions `CGImageDestinationCopyTypeIdentifiers` or `CGImageDestinationGetTypeID`.The function `CGPDFContextCreateWithURL` is a convenience function that writes PDF data to the location specified by a URL.
+
+Data consumer 是一个较旧的机制，功能有限，可用于写图像或 PDF 数据。You can supply a data consumer to:
+
+- The PDF context creation function `CGPDFContextCreate`. This function returns a graphics context that records your drawing as a sequence of PDF drawing commands that are passed to the data consumer object.
+- The function `CGImageDestinationCreateWithDataConsumer` to create an image destination from a data consumer.
+
+注意：处理 raw image data 时，为了获得最好的性能，请使用 vImage framework. 可调用 `vImageBuffer_InitWithCGImage` 函数把图像数据从 CGImageRef 导入 vImage. 请参阅 Accelerate Release Notes  以知详情。
+
+## Moving Data Between Quartz 2D and Core Image in Mac OS X ##
+
+Core Image framework 是 OS X 中的 Objective-C API, 支持图像处理。Core Image 内置的图像滤镜既支持视频，也支持表态的图像，还支持自定义滤镜和将近实时的处理。可将 Core Image 滤镜应用于 Quartz 2D 图像，如使用 Core Image 纠正色彩、使图像的几何特性扭曲、模糊或锐化图像，以及在图像之间创建转场。Core Image also allows you to apply an iterative process to an image—one that feeds back the output of a filter operation to the input. 详情请参阅 Core Image Programming Guide.
+
+Core Image 的方法操作的是 Core Image 格式的图像（`CIImage`），而不直接操作 Quartz 图像（`CGImageRef`）。要对 Quartz 图像应用 Core Image 滤镜，须先将其转换为 Core Image 图像。
+
+Quartz 2D API 未提供任何把 Quartz 转换为 Core Image 图像的方法，但 Core Image 提供了。以下方法从 Quartz 图像或 Quartz 图层（`CGLayerRef`）创建 Core Image 图像，可用以将 Quartz 2D 数据移到 Core Image:- imageWithCGImage:- imageWithCGImage:options:- imageWithCGLayer:
+- imageWithCGLayer:options:以下 Core Image 方法从 Core Image 图像返回 Quartz 图像，可用以将处理好的图像移回 Quartz 2D:- createCGImage:fromRect:
+- createCGLayerWithSize:info:
+
 # Bitmap Images and Image Masks #
+
+Bitmap images and image masks are like any drawing primitive in Quartz. 在 Quartz 中，二者都用 `CGImageRef` 数据类型表示。在 Quartz 中，不管如何创建位图图像，都可将其绘制到任何 graphics context 中。Keep in mind that a bitmap image is an array of bits at a specific resolution. 若把位图图像绘制到与分辨率无关的 graphics context 中（如 PDF graphics context），则其（分辨率）会被限制为创建时的分辨率。
+
+There is one way to create a Quartz image mask—by calling the function `CGImageMaskCreate`. You’ll see how to create one in Creating an Image Mask. Applying an image mask is not the only way to mask drawing. The sections Masking an Image with Color, Masking an Image with an Image Mask, and Masking an Image by Clipping the Context discuss all the masking methods available in Quartz.
+
+## About Bitmap Images and Image Masks ##
+
+位图图像（或采样图像）是一组像素（或样本），每个像素表示图像中的一个点。JPEG, TIFF, PNG 都是位图图像，程序图标也是位图图像。位图图像被限制为矩形形状，但使用 alpha 后可以以各种形状出现，还可以被旋转或剪切。
+
+位图中的每个样本都包含一个或多个 color components (in a specified color space), 加上一个额外的 component, 指定 alpha 值。每个 component 可以是 [1, 32] 比特，OS X 中 Quartz 还支持浮点 components. OS X 和 iOS 中支持的格式描述在 "Pixel formats supported for bitmap graphics contexts". ColorSync 为位图图像提供了色彩空间支持。
+
+Quartz also supports **image masks**. An image mask is a bitmap that specifies an area to paint, but not the color. In effect, an image mask acts as a stencil to specify where to place color on the page. Quartz uses the current fill color to paint an image mask. An image mask can have a depth of 1 to 8 bits.
+
+## Bitmap Image Information ##
+
+Quartz supports a wide variety of image formats and has built-in knowledge of several popular formats. In iOS, the formats include JPEG, GIF, PNG, TIF, ICO, GMP, XBM, and CUR. Other bitmap image formats or proprietary formats require that you specify details about the image format to Quartz in order to ensure that images are interpreted correctly. The image data you supply to the function CGImageCreate must be interleaved on a per pixel, not a per scan line, basis. Quartz does not support planar data.
+
+This section describes the information associated with a bitmap image. When you create and work with Quartz images (which use the CGImageRef data type), you’ll see that some Quartz image-creation functions require you to specify all this information, while other functions require a subset of this information. What you provide depends on the encoding used for the bitmap data, and whether the bitmap represents an image or an image mask.
+
+注意：处理 raw image data 时，为了获得最好的性能，请使用 vImage framework. 可调用 `vImageBuffer_InitWithCGImage` 函数把图像数据从 CGImageRef 导入 vImage. 请参阅 Accelerate Release Notes  以知详情。
+
+创建位图图像（CGImageRef）时，Quartz 使用以下信息：
+
+- A bitmap data source, which can be a Quartz data provider or a Quartz image source. Data Management in Quartz 2D describes both.
+- An optional decode array.
+- An interpolation setting, 一个布尔值，指定调整图像大小时是否使用插值算法。
+- A rendering intent that specifies how to map colors that are located within the destination color space of a graphics context. This information is not needed for image masks.
+- The image dimensions.
+- The pixel format, which includes bits per component, bits per pixel, and bytes per row.
+- For images, color spaces and bitmap layout information to describe the location of alpha and whether the bitmap uses floating-point values. Image masks don't require this information.
+
+### Decode Array ###
+
+解码数组把图像的色彩值映射为其他色彩值，在减淡或反色时（desaturating an image or inverting the colors）很有用。该数组为每个色彩分量包含一对数字。渲染图像时，Quartz 施加一个线性变换，把原来的分量值映射为适于目标色彩空间里指定范围内的一个相对数值。如 RGB 色彩空间下图像的解码数组包含 6 项，红、绿、蓝每个色彩分量各一对。
+
+> A decode array maps the image color values to other color values, which is useful for such tasks as desaturating an image or inverting the colors. The array contains a pair of numbers for each color component. When Quartz renders the image, it applies a linear transform to map the original component value to a relative number within the designated range appropriate for the destination color space. For example, the decode array for an image in the RGB color space contains 6 entries, one pair for each red, green, and blue color component.
+
+### Pixel Format ###
+
+像素格式包含以下信息：
+
+- Bits per component, which is the number of bits in each individual color component in a pixel. For an image mask, this value is the number of significant masking bits in a source pixel. For example, if the source image is an 8-bit mask, specify 8 bits per component.
+- Bits per pixel, which is the total number of bits in a source pixel. This value must be at least the number of bits per component times the number of components per pixel.
+- Bytes per row. The number of bytes per horizontal row in the image. 图像里每个水平行的字节数。
+
+### Color Spaces and Bitmap Layout ###
+
+为了使 Quartz 能正确地解释每个像素的比特，你必须指定：
+
+- 位图是否包含 alpha 通道。Quartz 支持 RGB、CMYK 和灰阶色彩空间，也支持 alpha 通道（透明），尽管并非所有位图图像格式都有 alpha 信息。当有 alpha 信息时，alpha 分量可在最高有效位或最低有效位中定位到（译注：the alpha component can be located in either the most significant bits of a pixel or the least significant bits. 由于是复数，可知最高有效位或最低有效位不止一位。中文没有复数形式，故加此注。下同）。
+- 对于有 alpha 分量的位图，色彩分量是否已与 alpha 值相乘。**Premultiplied alpha** 说的是源色彩分量已经与 alpha 值相乘，这样每个色彩分量都避免了额外的乘法操作，故可加快图像的渲染。
+- 样本的数据格式——整数还是浮点数。
+
+使用以下函数创建图像时，其中的 bitmapInfo 参数指定位图的布局信息（译注：如通道的相对顺序）：
+
+``` C
+CGImageRef CGImageCreate (
+   size_t width, size_t height,
+   size_t bitsPerComponent,
+   size_t bitsPerPixel,
+   size_t bytesPerRow,
+   CGColorSpaceRef space,
+   CGBitmapInfo bitmapInfo,
+   CGDataProviderRef provider,
+   const CGFloat decode[],
+   bool shouldInterpolate,
+   CGColorRenderingIntent intent
+);
+```
+
+以下常量指定 alpha 分量的位置，以及色彩分量是否已预相乘：
+
+- kCGImageAlphaLast— alpha 分量存储在每个像素的最低有效位里，如 RGBA.
+- kCGImageAlphaFirst— alpha 分量存储在每个像素的最高有效位里，如 ARGB.
+- kCGImageAlphaPremultipliedLast— alpha 分量存储在每个像素的最低有效位里，且色彩分量已与该 alpha 值相乘。
+- kCGImageAlphaPremultipliedFirst— alpha 分量存储在每个像素的最高有效位里，且色彩分量已与该 alpha 值相乘。
+- kCGImageAlphaNoneSkipLast— 无 alpha 分量。若像素的总大小大于色彩空间中色彩分量所需要的空间，则忽略最低有效位。There is no alpha component. If the total size of the pixel is greater than the space required for the number of color components in the color space, the least significant bits are ignored.
+- kCGImageAlphaNoneSkipFirst— 无 alpha 分量。若像素的总大小大于色彩空间中色彩分量所需要的空间，则忽略最高有效位。
+- kCGImageAlphaNone— 等价于 kCGImageAlphaNoneSkipLast.
+
+使用 `kCGBitmapFloatComponents` 常量指示使用浮点值的位图格式。对于使用浮点值的位图格式，将该常量与以上某个常量逻辑 OR, 如 `kCGImageAlphaPremultipliedLast | kCGBitmapFloatComponents`.
+
+![Pixel formats](TBD)
+
+## Creating Images ##
+
+以下列出了 Quartz 提供的创建 CGImage 对象的函数，选择使用哪个取决于图像数据的来源。
+
+- CGImageCreate    一个灵活的函数，但你必须指定 "Bitmap Image Information" 一节所讲的所有位图信息。
+- CGImageSourceCreateImageAtIndex    从 image source 创建图像，image source 可包含多于一个图像。关于 image source, 请参阅 Data Management in Quartz 2D.
+- CGImageSourceCreateThumbnailAtIndex    Creates a thumbnail image of an image that is associated with an image source.
+- CGBitmapContextCreateImage    Creates an image by copying the bits from a bitmap graphics context.
+- CGImageCreateWithImageInRect    Creates an image from the data contained within a sub-rectangle of an image.
+- CGImageCreateCopy    A utility function that creates a copy of an image.
+- CGImageCreateCopyWithColorSpace    A utility function that creates a copy of an image and replaces its color space.
+
+If you want to create a CGImage object from an image file that uses a standard image format such as PNG or JPEG, the easiest solution is to call the function CGImageSourceCreateWithURL to create an image source and then call the function CGImageSourceCreateImageAtIndex to create an image from the image data at a specific index in the image source. If the original image file contains only one image, then provide 0 as the index. If the image file format supports files that contain multiple images, you need to supply the index to the appropriate image, keeping in mind that the index values start at 0.
+
+If you’ve drawn content to a bitmap graphics context and want to capture that drawing to a CGImage object, call the function CGBitmapContextCreateImage.
+
+Several functions are utilities that operate on existing images, either to make a copy, create a thumbnail, or create an image from a portion of a larger one. Regardless of how you create a CGImage object, you use the function CGContextDrawImage to draw the image to a graphics context. Keep in mind that CGImage objects are immutable. When you no longer need a CGImage object, release it by calling the function CGImageRelease.
+
+### Creating an Image From Part of a Larger Image ###
+
+
+### Creating an Image from a Bitmap Graphics Context ###
+
+
+## Creating an Image Mask ##
+
+
+## Masking Images ##
+
+
+## Using Blend Modes with Images ##
+
 
 # Core Graphics Layer Drawing #
 
@@ -441,3 +914,7 @@ Quartz 中的仿射变换函数操作的是 matrices, 而不是 CTM. 用这些�
 # PostScript Conversion #
 
 # Text #
+
+# Terminology #
+
+Color component 色彩分量
