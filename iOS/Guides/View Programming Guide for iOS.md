@@ -1,3 +1,5 @@
+<title>View programming Guide for iOS</title>
+
 View programming Guide for iOS
 
 Apple Official Documentation
@@ -33,7 +35,7 @@ View 是 UIView （或其子类）的实例，管理程序窗口中的一块矩�
 
 Interface Builder 是一个以图形化方式构建及配置程序窗口和 view 的程序。Using Interface Builder, you assemble your views and place them in a nib file, which is a resource file that stores a freeze-dried version of your views and other objects. When you load a nib file at runtime, the objects inside it are reconstituted into actual objects that your code can then manipulate programmatically.
 
-Related: Interface Builder User Guide. View Controller Programming Guide.
+Related: Interface Builder User Guide. View Controller Programming Guide
 
 # View and Window Architecture #
 
