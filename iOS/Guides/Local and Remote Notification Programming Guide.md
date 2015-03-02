@@ -148,9 +148,12 @@ You can also schedule the notification for delivery on a recurring basis (daily,
 1. Schedule the local notification for delivery.
 You schedule a local notification by calling `scheduleLocalNotification:`. The app uses the fire date specified in the `UILocalNotification` object for the moment of delivery. Alternatively, you can present the notification immediately by calling the `presentLocalNotificationNow:` method.
 
-The method in Listing 2-2 creates and schedules a notification to inform the user of a hypothetical to-do list app about the impending due date of a to-do item. There are a couple things to note about it. For the alertBody, alertAction, and alertTitle properties, it fetches from the main bundle (via the NSLocalizedString macro) strings localized to the user’s preferred language. It also adds the name of the relevant to-do item to a dictionary assigned to the userInfo property.
+You can cancel a specific scheduled notification by calling `cancelLocalNotification:` on the app object, and you can cancel all scheduled notifications by calling `cancelAllLocalNotifications`. Both of these methods also programmatically dismiss a currently displayed notification alert. For example, you might want to cancel a notification that’s associated with a reminder the user no longer wants.
 
+在 OS X 中 schedule 本地通知。注意若程序当前位于最前端，则 OS X 不会发出本地通知。
 
+``` Objective-CNSUserNotification *notification = [[NSUserNotification alloc] init];notification.title = @"My Title";notification.informativeText = @"My Text";notification.deliveryDate = [NSDate dateWithTimeIntervalSinceNow:20];[[NSUserNotificationCenter defaultUserNotificationCenter] scheduleNotification:notification];
+```
 
 ## Registering for Remote Notifications ##
 
@@ -171,3 +174,9 @@ The method in Listing 2-2 creates and schedules a notification to inform the use
 # Provider Communication with Apple Push Notification Service #
 
 # Legacy Information #
+
+# Terminology #
+
+scheduled 预定的
+
+

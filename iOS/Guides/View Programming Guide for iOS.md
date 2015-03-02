@@ -7,7 +7,7 @@ Apple Official Documentation
 原文最后修订日期：2014.9.17
 
 
-在 iOS 中使用窗口和 view 在屏幕上展示程序的内容。窗口本身没有任何可见的内容，但为 view 提供了基本的容器；View 定义了窗口的一部分，可用以填充具体的内容。
+iOS 使用窗口和 view 在屏幕上展示程序的内容。窗口本身没有任何可见内容，但为 view 提供了基本的容器；View 定义了窗口的一部分，可用以填充具体的内容。
 
 每个程序至少有一个窗口和一个 view, 以展示其内容。UIKit 和一些其他系统框架提供了预定义好的 view, 简至按钮、文本标签，繁至表格、picker, scroll 等。若预定义的 view 不能满足需要，还可自定义 view 并自己处理绘图和事件。
 
@@ -25,11 +25,11 @@ View 是 UIView （或其子类）的实例，管理程序窗口中的一块矩�
 
 ### Windows Coordinate the Display of Your Views ###
 
-窗口是 UIWindow 的实例，它处理程序用户界面整体的总体呈现。窗口与 view （及其所属的 view controller）一起管理（用户）与 view hierarchy 的交互、以及对其所作的修改。多数情况下，程序的窗口是不会改变的，创建后它就保持不变，变的只是由它呈现的那些 view. 每个程序至少有一个在设备主屏幕上展示程序界面的窗口。若设备外接了显示器，程序还可创建第二个窗口来展示程序内容。
+窗口是 UIWindow 的实例，它处理用户界面的总体呈现。窗口与 view （及其所属的 view controller）一起管理（用户）与 view hierarchy 的交互、以及对其所作的修改。多数情况下，窗口是不会改变的，创建后就保持不变，变的只是由它呈现的那些 view. 每个程序至少有一个在设备主屏幕上展示界面的窗口。若设备外接了显示器，程序还可创建第二个窗口来展示程序内容。
 
 ### Animations Provide the User with Visible Feedback for Interface Changes ###
 
-动画为用户提供 view hierarchy 变化的可视化反馈。虽然系统提供了呈现模块 view 及在不同 view group 间过渡的标准动画，但也可对 view 的许多 attribute 直接应用动画，如 view 的透明度、位置、大小、背景色等。若直接操纵 view 的底层 Core Animation layer 对象，还可执行更多动画。
+动画为用户提供 view hierarchy 变化的可视化反馈。虽然系统提供了呈现模块 view 及在不同 view group 间过渡的标准动画，但也可对 view 的许多属性直接应用动画，如 view 的透明度、位置、大小、背景色等。若直接操纵 view 的底层 Core Animation layer 对象，还可执行更多动画。
 
 ### The Role of Interface Builder ###
 
