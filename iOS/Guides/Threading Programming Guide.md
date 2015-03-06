@@ -51,9 +51,8 @@ NSRunLoop, CFRunLoop class ref.
 Run loop 从两种来源接收事件：
 
 - Input sources 以异步方式发出事件，通常是来自其他线程或程序的消息。
-- Timer sources 以同步方式发出事件，在预定的时刻或重复的间隔发生。
+- Timer sources 以同步方式发出事件，在预定的时刻或以重复的间隔发生。
 
-事件到达时，两种来源都使用一个特定于程序的处理例程来处理（事件）。
 Both types of source use an application-specific handler routine to process the event when it arrives.
 
 Figure 3-1 shows the conceptual structure of a run loop and a variety of sources. The input sources deliver asynchronous events to the corresponding handlers and cause the runUntilDate: method (called on the thread’s associated NSRunLoop object) to exit. Timer sources deliver events to their handler routines but do not cause the run loop to exit.

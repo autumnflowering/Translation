@@ -85,6 +85,14 @@ iOS 程序的屏幕空间有限，故在如何向用户呈现信息方面必须�
 
 View controller 负责（仅）在需要时加载自己的 view, 某些条件下还可释放之。因此 view controller 在资源管理方面举足轻重。
 
+A view controller is the natural place to coordinate actions of its connected views.
+
+Usually, each view controller instantiated by your app sees only a subset of your app's data. It knows how to display that particular set of data, without needing to know about other kinds of data. Thus, an app's data model, UI design, and the view controllers you create are all influenced by each other.
+
+- Every view is controlled by only one view controller. When a view is assigned to the view controller’s view property, the view controller owns it. If the view is a subview, it might be controlled by the same view controller or a different view controller. You’ll learn more about how to use multiple view controllers to organize a single view hierarchy when you learn about container view controllers.
+- Each view controller interacts with a subset of your app’s data. For example, the Photo controller needs to know only the photo to be displayed.
+- Because each view controller provides only a subset of the user experience, the view controllers must communicate with each other to make this experience seamless. They may also communicate with other controllers, such as data controllers or document objects.
+
 ## A Taxonomy of View Controllers ##
 ## View Controller’s Content Can Be Displayed in Many Ways ##
 ## View Controllers Work Together to Create an App’s Interface ##

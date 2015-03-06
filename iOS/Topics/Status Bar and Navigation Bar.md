@@ -23,7 +23,7 @@ iOS 7 之前只能调整状态栏的颜色，而 iOS 7 中的状态栏是透明�
 
 未使用 UINavigationController 时状态栏就成为一个设计和开发的任务，因为你可以控制状态栏（Z 轴）之后的内容。
 
-若程序针对的是 iOS 7+, 则处理起来较容易：在状态栏之后放置一个 20 点高的 view 即可，或者保持原样不动。还可修改状态栏的样式，目前仅有黑（默认）和白两种样式。
+若程序针对的是 iOS 7+, 则处理起来较容易：在状态栏之后放置一个 20 点高的 view 即可，或者保持原样不动。还可修改状态栏的样式，目前仅有深色（默认）和浅色两种样式。
 
 ### Status Bar Style Entire App Wide ###
 
@@ -61,9 +61,7 @@ info.plist 文件中，View controller-based status bar appearance 项设为 YES
 
 ## Background Color ##
 
-In iOS 7, the `tintColor` property is no longer used for setting the color of the bar. Instead, use the `barTintColor` property to change the background color. You can insert the below code in the didFinishLaunchingWithOptions: of AppDelegate.m.
-
-iOS 7 不再使用 `tintColor` 属性设置（导航？）栏的颜色，而用 `barTintColor` 属性修改其背景色。
+iOS 6 使用 `tintColor` 属性指定导航栏的背景色。iOS 7 使用 `barTintColor` 属性指定导航栏的背景色，使用 `tintColor` 指定 bar button items 的颜色。
 
 ``` Swift
 // App Delegate, didFinishLaunchingWithOptions:
@@ -122,8 +120,10 @@ If your app uses a custom image as the background of the bar, you’ll need to p
 
 `UINavigationBar.appearance().tintColor = UIColor.whiteColor();`
 
-**注意这不仅会修改返回按钮的颜色，还会修改其他 bar button item 的文件和图像颜色。**
+上面已经说过，iOS 7 使用 `tintColor` 指定 bar button items 的颜色，故也影响到了返回按钮的颜色。
 
+If you want to use a custom image to replace the default chevron (the default BACK shape), you also need to create a custom mask image. iOS 7 uses the mask to make the previous screen's title appear to emerge from—or disappear into—the chevron during navigation transitions. To learn about the properties that control the Back button and mask image, see UINavigationBar Class Reference.
+ 
 iOS 7 默认的返回按钮是 "<" 形状，可将其替换为自定义的图像：
 
 ``` Objective-C
@@ -141,6 +141,8 @@ iOS 7 默认的返回按钮是 "<" 形状，可将其替换为自定义的图像
 ```
 
 `leftBarButtonItems` 属性同理。
+
+注意仅当有足够的空间时，这些 bar button items 才会显示出来。
 
 # References #
 
